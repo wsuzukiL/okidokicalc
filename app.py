@@ -360,11 +360,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 🎯 計算結果表示用プレースホルダー（上部に表示するため）
-# ==========================================
-results_placeholder = st.empty()
-
-# ==========================================
 # 手動入力・修正エリア
 # ==========================================
 with st.expander("✏️ 履歴データを手動で修正・追加する", expanded=False):
@@ -440,11 +435,6 @@ else:
     total_games += current_game
     remaining_games = max(0, 2000 - total_games)
     
-    # 🎯 計算結果を上部のプレースホルダーに表示
-    with results_placeholder.container():
-        st.markdown(f"## 🎯 計算結果\n### 累計消化ゲーム数: **{total_games} G**")
-        st.markdown("---")
-
     # ネイティブStreamlitコンポーネントによるリストレイアウト
     st.markdown("<div class='history-container'>", unsafe_allow_html=True)
     
