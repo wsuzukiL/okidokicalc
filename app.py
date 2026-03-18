@@ -101,10 +101,10 @@ def analyze_image_with_vision_api(image_bytes, api_key):
 def parse_ocr_text(annotations):
     """
     データカウンタ特有の座標クラスタリングを用いた高精度パーサー。
-    ノイズ（総回転数やグラフの縦軸数値、確率など）を座標の縦横の並び(列・行)から判定して完全に除外する。
+    ノイズを取り除き、履歴と「現在のゲーム数」を両方抽出する。
     """
     if not annotations or len(annotations) < 2:
-        return []
+        return [], 0
         
     words = annotations[1:]
     
@@ -126,7 +126,7 @@ def parse_ocr_text(annotations):
             })
             
     if not items:
-        return []
+        return [], 0
 
     # 2. 種類(BB/RB)と数字を抽出
     bb_rb_pattern = re.compile(r'\b(BB|RB|BIG|REG|8B|R8)\b', re.IGNORECASE)
@@ -143,31 +143,57 @@ def parse_ocr_text(annotations):
             
         elif number_pattern.match(text) or text.isdigit():
             val = int(re.sub(r'[^0-9]', '', text))
-            # 沖ドキのゲーム数にあり得る数字のみ (1〜2000)
             if 0 < val <= 2000:
                 nums.append({**item, "val": val})
                 
-    if not types or not nums:
-        return []
+    if not nums:
+        return [], 0
 
-    # 3. リストが縦並びか横並びかを判定 (標準偏差でチェック)
+    # 3. 現在のゲーム数(ハマりG数)を推定する
+    current_game = 0
+    used_nums = set()
+    
+    keyword_items = [item for item in items if any(k in item["text"] for k in ["現在", "スタート", "回転", "ハマ", "G数"])]
+    
+    if keyword_items:
+        target_keyword = keyword_items[0]
+        # Y座標がキーワードより大きく上ではない数字（通常は下や右にある）
+        possible_nums = [n for n in nums if n["y"] > target_keyword["y"] - 20]
+        if possible_nums:
+            possible_nums.sort(key=lambda n: ((n["x"] - target_keyword["x"])**2 + (n["y"] - target_keyword["y"])**2))
+            current_game = possible_nums[0]["val"]
+            used_nums.add(id(possible_nums[0]))
+            
+    if current_game == 0 and nums:
+        # 文字面積が最大のものが現在ゲーム数である可能性が高い
+        biggest_num = max(nums, key=lambda n: n["width"] * n["height"])
+        avg_area = sum(n["width"] * n["height"] for n in nums) / len(nums)
+        if (biggest_num["width"] * biggest_num["height"]) > avg_area * 1.5:
+            current_game = biggest_num["val"]
+            used_nums.add(id(biggest_num))
+
+    history_nums = [n for n in nums if id(n) not in used_nums]
+
+    if not types or not history_nums:
+        return [], current_game
+
+    # 4. リストが縦並びか横並びかを判定
     types_x = [t["x"] for t in types]
     types_y = [t["y"] for t in types]
     
     std_x = pstdev(types_x) if len(types_x) > 1 else 0
     std_y = pstdev(types_y) if len(types_y) > 1 else 0
     
-    is_vertical_layout = std_x <= std_y  # X座標のブレが少ない＝縦一列に並んでいる
+    is_vertical_layout = std_x <= std_y  # X座標のブレが少ない＝縦並び
     
-    # 4. 数字をクラスタ(列または行)にグループ化し、無関係な数字の列を除外する
+    # 5. 数字をクラスタ(列または行)にグループ化
+    res = []
     clusters = []
     if is_vertical_layout:
-        # 縦並び：X座標が近いものを同じ列とする
-        nums.sort(key=lambda n: n["x"])
-        if nums:
-            current_cluster = [nums[0]]
-            for n in nums[1:]:
-                # X座標が近い(例: 幅の範囲内か40px以内)なら同じ列
+        history_nums.sort(key=lambda n: n["x"])
+        if history_nums:
+            current_cluster = [history_nums[0]]
+            for n in history_nums[1:]:
                 if abs(n["x"] - current_cluster[-1]["x"]) <= max(40, n["width"]):
                     current_cluster.append(n)
                 else:
@@ -181,17 +207,14 @@ def parse_ocr_text(annotations):
             types.sort(key=lambda t: t["y"])
             best_cluster.sort(key=lambda n: n["y"])
             
-            res = []
             for i in range(min(len(types), len(best_cluster))):
                 res.append({"ゲーム数": best_cluster[i]["val"], "種類": types[i]["val"]})
-            return res
             
     else:
-        # 横並び：Y座標が近いものを同じ行とする
-        nums.sort(key=lambda n: n["y"])
-        if nums:
-            current_cluster = [nums[0]]
-            for n in nums[1:]:
+        history_nums.sort(key=lambda n: n["y"])
+        if history_nums:
+            current_cluster = [history_nums[0]]
+            for n in history_nums[1:]:
                 if abs(n["y"] - current_cluster[-1]["y"]) <= max(20, n["height"]):
                     current_cluster.append(n)
                 else:
@@ -205,12 +228,10 @@ def parse_ocr_text(annotations):
             types.sort(key=lambda t: t["x"])
             best_cluster.sort(key=lambda n: n["x"])
             
-            res = []
             for i in range(min(len(types), len(best_cluster))):
                 res.append({"ゲーム数": best_cluster[i]["val"], "種類": types[i]["val"]})
-            return res
 
-    return []
+    return res, current_game
 
 # ==========================================
 # UI 構築 
@@ -227,6 +248,9 @@ if "history_data" not in st.session_state:
         ]
     )
 
+if "current_game_state" not in st.session_state:
+    st.session_state.current_game_state = 0
+
 st.markdown("### 画像アップロード (OCR用)")
 uploaded_file = st.file_uploader("データカウンタの履歴画像をアップロードしてください", type=["jpg", "jpeg", "png"])
 
@@ -239,14 +263,17 @@ if uploaded_file is not None:
             if annotations is not None and len(annotations) > 0:
                 st.success("テキスト情報を抽出し、不要な数値を自動除外しました！")
                 
-                parsed_history = parse_ocr_text(annotations)
+                parsed_history, current_game = parse_ocr_text(annotations)
                 
-                if parsed_history:
-                    st.session_state.history_data = pd.DataFrame(parsed_history)
-                    st.info("履歴テーブルを自動更新しました。誤りがあれば修正してください。")
+                if parsed_history or current_game > 0:
+                    if parsed_history:
+                        st.session_state.history_data = pd.DataFrame(parsed_history)
+                    if current_game > 0:
+                        st.session_state.current_game_state = current_game
+                    st.info(f"履歴テーブルを更新し、現在のゲーム数を {current_game}G に設定しました。誤りがあれば修正してください。")
                     st.rerun()
                 else:
-                    st.warning("画像から履歴データ(列・行)を正しく認識できませんでした。")
+                    st.warning("画像から履歴データ(列・行)や現在のゲーム数を正しく認識できませんでした。")
 
 st.divider()
 
@@ -263,7 +290,7 @@ edited_df = st.data_editor(
     }
 )
 
-current_game = st.number_input("現在のゲーム数（ハマりG数）", min_value=0, value=0, step=1)
+current_game = st.number_input("現在のゲーム数（ハマりG数）", min_value=0, step=1, key="current_game_state")
 
 if st.button("計算する", type="primary"):
     history = edited_df.to_dict("records")
