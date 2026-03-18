@@ -502,6 +502,7 @@ else:
             
     # 現在のゲーム数行
     if current_game > 0 or total_games > 0:
+        final_total = total_games + current_game
         cols = st.columns([1, 1, 1, 2], vertical_alignment="center")
         with cols[0]:
             st.markdown(f"<span class='history-col-num'>現在</span>", unsafe_allow_html=True)
@@ -510,6 +511,6 @@ else:
         with cols[2]:
             st.markdown(f"<span class='badge-now'>現在G</span>", unsafe_allow_html=True)
         with cols[3]:
-            st.markdown(f"<span class='history-col-cum' style='color: #d11a2a; font-size: 1.35em;'>{total_games}G</span>", unsafe_allow_html=True)
+            st.markdown(f"<span class='history-col-cum' style='color: #d11a2a; font-size: 1.35em;'>{final_total}G</span>", unsafe_allow_html=True)
         
     st.markdown("</div>", unsafe_allow_html=True)
