@@ -292,60 +292,62 @@ edited_df = st.data_editor(
 
 current_game = st.number_input("現在のゲーム数（ハマりG数）", min_value=0, step=1, key="current_game_state")
 
-if st.button("計算する", type="primary"):
-    history = edited_df.to_dict("records")
-    
-    if not history:
-        st.warning("履歴データを一つ以上入力してください。")
-    else:
-        history_reversed = list(reversed(history))
-        
-        origin_idx = 0
-        prev_was_chain = False
-        
-        for i, row in enumerate(history_reversed):
-            try:
-                g = int(row.get("ゲーム数", 0))
-            except (ValueError, TypeError):
-                g = 0
-                
-            if g <= 32:
-                prev_was_chain = True
-            else:
-                if prev_was_chain:
-                    origin_idx = i
-                prev_was_chain = False
-                
-        total_games = 0
-        for i in range(origin_idx, len(history_reversed)):
-            row = history_reversed[i]
-            try:
-                g = int(row.get("ゲーム数", 0))
-            except (ValueError, TypeError):
-                g = 0
-            b_type = row.get("種類", "BB")
-            
-            total_games += g
-            if b_type == "BB":
-                total_games += 69
-            elif b_type == "RB":
-                total_games += 29
-                
-        total_games += current_game
-        remaining_games = max(0, 2000 - total_games)
-        
-        st.divider()
-        st.markdown("## 🎯 計算結果")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            st.metric(label="累計消化ゲーム数", value=f"{total_games} G")
-        with col2:
-            st.metric(label="2000Gまでの残り", value=f"{remaining_games} G")
+# ==========================================
+# 自動計算ロジック
+# ==========================================
+history = edited_df.to_dict("records")
 
-        if remaining_games == 0:
-            st.success("🎉 すでに有利区間天井(2000G)に到達している可能性があります！")
-        elif remaining_games <= 500:
-            st.warning("🔥 天井まであと少しです！")
+if not history:
+    st.info("履歴データを入力するか、画像をアップロードしてください。")
+else:
+    history_reversed = list(reversed(history))
+    
+    origin_idx = 0
+    prev_was_chain = False
+    
+    for i, row in enumerate(history_reversed):
+        try:
+            g = int(row.get("ゲーム数", 0))
+        except (ValueError, TypeError):
+            g = 0
+            
+        if g <= 32:
+            prev_was_chain = True
         else:
-            st.info("まだまだ天井までは距離があります。")
+            if prev_was_chain:
+                origin_idx = i
+            prev_was_chain = False
+            
+    total_games = 0
+    for i in range(origin_idx, len(history_reversed)):
+        row = history_reversed[i]
+        try:
+            g = int(row.get("ゲーム数", 0))
+        except (ValueError, TypeError):
+            g = 0
+        b_type = row.get("種類", "BB")
+        
+        total_games += g
+        if b_type == "BB":
+            total_games += 69
+        elif b_type == "RB":
+            total_games += 29
+            
+    total_games += current_game
+    remaining_games = max(0, 2000 - total_games)
+    
+    st.divider()
+    st.markdown("## 🎯 計算結果")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric(label="累計消化ゲーム数", value=f"{total_games} G")
+    with col2:
+        st.metric(label="2000Gまでの残り", value=f"{remaining_games} G")
+
+    if remaining_games == 0:
+        st.success("🎉 すでに有利区間天井(2000G)に到達している可能性があります！")
+    elif remaining_games <= 500:
+        st.warning("🔥 天井まであと少しです！")
+    else:
+        st.info("まだまだ天井までは距離があります。")
