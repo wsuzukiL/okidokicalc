@@ -208,7 +208,7 @@ def parse_ocr_text(annotations):
             best_cluster.sort(key=lambda n: n["y"])
             
             for i in range(min(len(types), len(best_cluster))):
-                res.append({"ゲーム数": best_cluster[i]["val"], "種類": types[i]["val"]})
+                res.append({"BR": types[i]["val"], "ゲーム数": best_cluster[i]["val"]})
             
     else:
         history_nums.sort(key=lambda n: n["y"])
@@ -229,7 +229,7 @@ def parse_ocr_text(annotations):
             best_cluster.sort(key=lambda n: n["x"])
             
             for i in range(min(len(types), len(best_cluster))):
-                res.append({"ゲーム数": best_cluster[i]["val"], "種類": types[i]["val"]})
+                res.append({"BR": types[i]["val"], "ゲーム数": best_cluster[i]["val"]})
 
     return res, current_game
 
@@ -239,12 +239,12 @@ def parse_ocr_text(annotations):
 if "history_data" not in st.session_state:
     st.session_state.history_data = pd.DataFrame(
         [
-            {"ゲーム数": 120, "種類": "BB"},
-            {"ゲーム数": 15, "種類": "RB"},
-            {"ゲーム数": 10, "種類": "BB"},
-            {"ゲーム数": 400, "種類": "BB"},
-            {"ゲーム数": 5, "種類": "BB"},
-            {"ゲーム数": 200, "種類": "RB"},
+            {"BR": "BB", "ゲーム数": 120},
+            {"BR": "RB", "ゲーム数": 15},
+            {"BR": "BB", "ゲーム数": 10},
+            {"BR": "BB", "ゲーム数": 400},
+            {"BR": "BB", "ゲーム数": 5},
+            {"BR": "RB", "ゲーム数": 200},
         ]
     )
 
@@ -364,9 +364,10 @@ edited_df = st.data_editor(
     num_rows="dynamic",
     use_container_width=True,
     column_config={
-        "ゲーム数": st.column_config.NumberColumn("ゲーム数", min_value=1, step=1),
-        "種類": st.column_config.SelectboxColumn("種類", options=["BB", "RB"], required=True)
-    }
+        "BR": st.column_config.SelectboxColumn("BR", options=["BB", "RB"], required=True),
+        "ゲーム数": st.column_config.NumberColumn("ゲーム数", min_value=1, step=1)
+    },
+    column_order=["BR", "ゲーム数"]
 )
 current_game = st.number_input("現在のゲーム数（ハマりG数）", min_value=0, step=1, key="current_game_state")
 
@@ -408,7 +409,7 @@ else:
             g = int(row.get("ゲーム数", 0))
         except (ValueError, TypeError):
             g = 0
-        b_type = row.get("種類", "BB")
+        b_type = row.get("BR", "BB")
         
         is_cut = i < origin_idx
         row_class = "history-row cut-row" if is_cut else "history-row"
