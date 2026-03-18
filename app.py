@@ -451,7 +451,28 @@ else:
     total_games = 0
     display_count = 1
     
+    def draw_boundary_line(idx, total_len):
+        col1, col2, col3 = st.columns([1, 6, 1], vertical_alignment="center")
+        with col1:
+            if st.button("⬆️", key=f"up_{idx}", use_container_width=True, disabled=(idx == 0)):
+                st.session_state.force_origin_idx = max(0, idx - 1)
+                st.rerun()
+        with col2:
+            st.markdown("""
+            <div style='text-align: center; color: #dc3545; font-size: 0.95em; font-weight: bold; margin-bottom: -15px;'>
+                ⬆️ 上は除外 / ここから下を計算 ⬇️
+            </div>
+            <hr style='border: 2px dashed #dc3545; margin: 15px 0;'>
+            """, unsafe_allow_html=True)
+        with col3:
+            if st.button("⬇️", key=f"down_{idx}", use_container_width=True, disabled=(idx >= total_len)):
+                st.session_state.force_origin_idx = min(total_len, idx + 1)
+                st.rerun()
+
     for i, row in enumerate(history_reversed):
+        if i == origin_idx:
+            draw_boundary_line(origin_idx, len(history_reversed))
+            
         try:
             g = int(row.get("ゲーム数", 0))
         except (ValueError, TypeError):
@@ -472,10 +493,7 @@ else:
                 badge_label = 'BIG' if 'BIG' in b_type else 'REG'
                 st.markdown(f"<span class='badge-{badge_type}'>{badge_label}</span>", unsafe_allow_html=True)
             with col4:
-                # ユーザーがクリックして起点にできるようにボタンを配置
-                if st.button("🔄 ここから計算", key=f"set_origin_{i}", use_container_width=True):
-                    st.session_state.force_origin_idx = i
-                    st.rerun()
+                st.markdown("<span class='history-col-cum'>連チャン中 (除外)</span>", unsafe_allow_html=True)
         else:
             start_g = total_games + g
             if "BIG" in b_type:
@@ -499,6 +517,9 @@ else:
             display_count += 1
             
         st.markdown("<hr style='margin: 0.5em 0; border-top: 1px solid #f0f0f0;'/>", unsafe_allow_html=True)
+        
+    if origin_idx == len(history_reversed):
+        draw_boundary_line(origin_idx, len(history_reversed))
             
     # 現在のゲーム数行
     if current_game > 0 or total_games > 0:
