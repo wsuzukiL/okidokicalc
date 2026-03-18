@@ -355,20 +355,20 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 手動入力・修正エリア (隠し気味にする)
+# 手動入力・修正エリア
 # ==========================================
-with st.expander("⚙️ 履歴の手動修正・追加", expanded=False):
-    st.caption("※ 一番上が「最新の履歴」になるように入力してください。")
-    edited_df = st.data_editor(
-        st.session_state.history_data,
-        num_rows="dynamic",
-        use_container_width=True,
-        column_config={
-            "ゲーム数": st.column_config.NumberColumn("ゲーム数", min_value=1, step=1),
-            "種類": st.column_config.SelectboxColumn("種類", options=["BB", "RB"], required=True)
-        }
-    )
-    current_game = st.number_input("現在のゲーム数（ハマりG数）", min_value=0, step=1, key="current_game_state")
+st.markdown("### ⚙️ 履歴の手動修正・追加")
+st.caption("※ 一番上が「最新の履歴」になるように入力してください。")
+edited_df = st.data_editor(
+    st.session_state.history_data,
+    num_rows="dynamic",
+    use_container_width=True,
+    column_config={
+        "ゲーム数": st.column_config.NumberColumn("ゲーム数", min_value=1, step=1),
+        "種類": st.column_config.SelectboxColumn("種類", options=["BB", "RB"], required=True)
+    }
+)
+current_game = st.number_input("現在のゲーム数（ハマりG数）", min_value=0, step=1, key="current_game_state")
 
 # ==========================================
 # 自動計算ロジック & 美しいリストUI描画
