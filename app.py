@@ -13,8 +13,9 @@ from statistics import pstdev
 # Cookie Manager: スマホ用ブラウザ保存設定
 # ==========================================
 cookie_manager = stx.CookieManager()
+cookie_val = cookie_manager.get(cookie="google_api_key")
 
-# 環境変数やSecretsからの取得を優先
+# 環境変数やSecrets、Cookieからの取得を優先
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
 if not GOOGLE_API_KEY:
     try:
@@ -22,21 +23,18 @@ if not GOOGLE_API_KEY:
     except (FileNotFoundError, KeyError):
         pass
 
+if not GOOGLE_API_KEY and cookie_val:
+    GOOGLE_API_KEY = cookie_val
+
 # セッションステートにAPIキーを保持する（再描画時の安定化のため）
 if "api_key_state" not in st.session_state:
-    st.session_state.api_key_state = ""
-
-# クッキーから取得
-cookie_val = cookie_manager.get(cookie="google_api_key")
-if cookie_val and not GOOGLE_API_KEY:
-    GOOGLE_API_KEY = cookie_val
-    st.session_state.api_key_state = cookie_val
+    st.session_state.api_key_state = GOOGLE_API_KEY
 
 # 画面構成: タイトル
 st.title("沖ドキ！GOLD 有利区間計算ツール")
 
 # 初回APIキー入力UI
-if not GOOGLE_API_KEY and not st.session_state.api_key_state:
+if not GOOGLE_API_KEY and not cookie_val and not st.session_state.api_key_state:
     st.warning("⚠️ Google Cloud Vision APIキーが設定されていません。")
     st.info("初回のみ、以下の枠にAPIキーを入力してください。お使いのスマホ(ブラウザ)に安全に保存され、次回からは入力を省略できます。")
     
@@ -286,57 +284,57 @@ st.markdown("""
 .badge-big {
     background-color: #dc3545;
     color: white;
-    padding: 3px 10px;
+    padding: 5px 12px;
     border-radius: 6px;
     font-weight: bold;
-    font-size: 0.85em;
+    font-size: 1.1em;
     display: inline-block;
-    width: 45px;
+    width: 60px;
     text-align: center;
 }
 .badge-reg {
     background-color: #007bff;
     color: white;
-    padding: 3px 10px;
+    padding: 5px 12px;
     border-radius: 6px;
     font-weight: bold;
-    font-size: 0.85em;
+    font-size: 1.1em;
     display: inline-block;
-    width: 45px;
+    width: 60px;
     text-align: center;
 }
 .badge-now {
     background-color: #ffc107;
     color: black;
-    padding: 3px 10px;
+    padding: 5px 12px;
     border-radius: 6px;
     font-weight: bold;
-    font-size: 0.85em;
+    font-size: 1.1em;
     display: inline-block;
-    width: 45px;
+    width: 65px;
     text-align: center;
 }
 .history-row {
-    font-size: 1.05em;
-    padding: 10px 5px;
+    font-size: 1.25em;
+    padding: 12px 5px;
     border-bottom: 1px solid #f0f0f0;
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
 .history-col-num {
-    width: 55px;
+    width: 65px;
     color: #555;
-    font-size: 0.9em;
+    font-size: 1.0em;
 }
 .history-col-game {
-    width: 50px;
+    width: 60px;
     text-align: right;
     font-weight: bold;
 }
 .history-col-cum {
     color: #b30000;
-    font-size: 1.1em;
+    font-size: 1.25em;
     font-weight: 800;
     text-align: right;
     flex-grow: 1;
@@ -366,7 +364,7 @@ results_placeholder = st.empty()
 # ==========================================
 # 手動入力・修正エリア
 # ==========================================
-st.markdown("### ⚙️ 履歴の手動修正・追加")
+st.markdown("### ⚙️ 履歴")
 st.caption("※ 一番上が「最新の履歴」になるように入力してください。")
 
 edited_df = st.data_editor(
@@ -439,20 +437,7 @@ else:
     
     # 🎯 計算結果を上部のプレースホルダーに表示
     with results_placeholder.container():
-        st.markdown("## 🎯 計算結果")
-        col1, col2 = st.columns(2)
-        with col1:
-            st.metric(label="累計消化ゲーム数", value=f"{total_games} G")
-        with col2:
-            st.metric(label="2000Gまでの残り", value=f"{remaining_games} G")
-
-        if remaining_games == 0:
-            st.success("🎉 すでに有利区間天井(2000G)に到達している可能性があります！")
-        elif remaining_games <= 500:
-            st.warning("🔥 天井まであと少しです！")
-        else:
-            st.info("まだまだ天井までは距離があります。")
-            
+        st.markdown(f"## 🎯 計算結果\n### 累計消化ゲーム数: **{total_games} G**")
         st.markdown("---")
 
     # HTMLレンダリング
