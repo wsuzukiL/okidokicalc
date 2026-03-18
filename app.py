@@ -12,11 +12,7 @@ from statistics import pstdev
 # ==========================================
 # Cookie Manager: スマホ用ブラウザ保存設定
 # ==========================================
-@st.cache_resource
-def get_manager():
-    return stx.CookieManager()
-
-cookie_manager = get_manager()
+cookie_manager = stx.CookieManager()
 
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
 if not GOOGLE_API_KEY:
