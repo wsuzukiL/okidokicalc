@@ -455,12 +455,9 @@ else:
         
     html_out.append("</div>")
     
+    # (計算用変数の更新のみ残し、HTMLの構築箇所は不要だがロジック維持のためそのまま)
     total_games += current_game
     remaining_games = max(0, 2000 - total_games)
-    
-    # リストUIの表示
-    st.markdown("### 📜 ボーナス履歴推移 (自動計算)")
-    st.markdown("".join(html_out), unsafe_allow_html=True)
     
     st.markdown("## 🎯 最終結果")
     
