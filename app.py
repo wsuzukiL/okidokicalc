@@ -311,10 +311,10 @@ st.markdown("""
     color: black;
     padding: 5px 12px;
     border-radius: 6px;
-    font-weight: bold;
-    font-size: 1.1em;
+    font-weight: 900;
+    font-size: 1.25em;
     display: inline-block;
-    width: 65px;
+    width: 120px;
     text-align: center;
 }
 .history-row {
@@ -514,13 +514,13 @@ else:
     # 現在のゲーム数行
     if current_game > 0 or total_games > 0:
         final_total = total_games + current_game
-        cols = st.columns([1, 1, 1, 2], vertical_alignment="center")
+        cols = st.columns([1, 1, 1.5, 1.5], vertical_alignment="center")
         with cols[0]:
             st.markdown(f"<span class='history-col-num'>現在</span>", unsafe_allow_html=True)
         with cols[1]:
             st.markdown(f"<span class='history-col-game'>{current_game}G</span>", unsafe_allow_html=True)
         with cols[2]:
-            st.markdown(f"<span class='badge-now'>現在G</span>", unsafe_allow_html=True)
+            st.markdown(f"<span class='badge-now'>現在累計G</span>", unsafe_allow_html=True)
         with cols[3]:
             st.markdown(f"<span class='history-col-cum' style='color: #d11a2a; font-size: 1.35em;'>{final_total}G</span>", unsafe_allow_html=True)
         
