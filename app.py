@@ -410,7 +410,43 @@ else:
                 origin_idx = i
             prev_was_chain = False
 
-    # HTMLレンダリングと計算を同時に実行
+    # 先に累計G数と天井までの残りを計算する
+    total_games = 0
+    for i, row in enumerate(history_reversed):
+        is_cut = i < origin_idx
+        if not is_cut:
+            try:
+                g = int(row.get("ゲーム数", 0))
+            except (ValueError, TypeError):
+                g = 0
+            b_type = row.get("BR", "🔴 BIG")
+            start_g = total_games + g
+            if "BIG" in b_type:
+                total_games = start_g + 69
+            else:
+                total_games = start_g + 29
+                
+    total_games += current_game
+    remaining_games = max(0, 2000 - total_games)
+    
+    # 🎯 計算結果を先に表示
+    st.markdown("## 🎯 計算結果")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric(label="累計消化ゲーム数", value=f"{total_games} G")
+    with col2:
+        st.metric(label="2000Gまでの残り", value=f"{remaining_games} G")
+
+    if remaining_games == 0:
+        st.success("🎉 すでに有利区間天井(2000G)に到達している可能性があります！")
+    elif remaining_games <= 500:
+        st.warning("🔥 天井まであと少しです！")
+    else:
+        st.info("まだまだ天井までは距離があります。")
+        
+    st.markdown("---")
+
+    # HTMLレンダリング
     html_out = ["<div class='history-container'>"]
     
     total_games = 0
@@ -462,27 +498,10 @@ else:
             <span class='history-col-num'>現在</span>
             <span class='history-col-game'>{current_game}G</span>
             <span class='badge-now'>現在G</span>
-            <span class='history-col-cum' style='color: #d11a2a; font-size: 1.35em;'>{total_games + current_game}G</span>
+            <span class='history-col-cum' style='color: #d11a2a; font-size: 1.35em;'>{total_games}G</span>
         </div>
         """)
         
     html_out.append("</div>")
     
-    # (計算用変数の更新のみ残し、HTMLの構築箇所は不要だがロジック維持のためそのまま)
-    total_games += current_game
-    remaining_games = max(0, 2000 - total_games)
-    
-    st.markdown("## 🎯 最終結果")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric(label="累計消化ゲーム数", value=f"{total_games} G")
-    with col2:
-        st.metric(label="2000Gまでの残り", value=f"{remaining_games} G")
-
-    if remaining_games == 0:
-        st.success("🎉 すでに有利区間天井(2000G)に到達している可能性があります！")
-    elif remaining_games <= 500:
-        st.warning("🔥 天井まであと少しです！")
-    else:
-        st.info("まだまだ天井までは距離があります。")
+    st.markdown("".join(html_out), unsafe_allow_html=True)
