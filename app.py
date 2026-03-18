@@ -12,7 +12,7 @@ from statistics import pstdev
 # ==========================================
 # Cookie Manager: スマホ用ブラウザ保存設定
 # ==========================================
-@st.cache_resource(experimental_allow_widgets=True)
+@st.cache_resource
 def get_manager():
     return stx.CookieManager()
 
