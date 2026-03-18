@@ -250,7 +250,7 @@ if "history_data" not in st.session_state:
 if "force_origin_idx" not in st.session_state:
     st.session_state.force_origin_idx = None
 
-st.markdown("### 画像アップロード (OCR用)")
+st.markdown("### 画像アップロード")
 uploaded_file = st.file_uploader("データカウンタの履歴画像をアップロードしてください", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
