@@ -357,20 +357,27 @@ st.markdown("""
 # ==========================================
 # 手動入力・修正エリア
 # ==========================================
+
+# データエディタ内の BB/RB の文字色を強制的に変える CSS ハック
+st.markdown("""
+<style>
+/* Streamlit のデータエディタ内のテキスト (BBやRB) に色を付ける */
+div[data-testid="stDataFrame"] div[title="BB"] {
+    color: #dc3545 !important;
+    font-weight: bold !important;
+}
+div[data-testid="stDataFrame"] div[title="RB"] {
+    color: #007bff !important;
+    font-weight: bold !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 st.markdown("### ⚙️ 履歴の手動修正・追加")
 st.caption("※ 一番上が「最新の履歴」になるように入力してください。")
 
-def style_br_column(val):
-    if val == "BB":
-        return "color: #dc3545; font-weight: bold;"
-    elif val == "RB":
-        return "color: #007bff; font-weight: bold;"
-    return ""
-
-styled_df = st.session_state.history_data.style.map(style_br_column, subset=["BR"])
-
 edited_df = st.data_editor(
-    styled_df,
+    st.session_state.history_data,
     num_rows="dynamic",
     use_container_width=True,
     column_config={
