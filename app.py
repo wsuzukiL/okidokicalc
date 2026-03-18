@@ -498,4 +498,4 @@ else:
         
     html_out.append("</div>")
     
-    st.markdown("".join(html_out), unsafe_allow_html=True)
+    st.html("".join(html_out))
