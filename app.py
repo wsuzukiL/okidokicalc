@@ -277,31 +277,110 @@ if uploaded_file is not None:
 
 st.divider()
 
-st.markdown("### ボーナス履歴")
-st.caption("※上から「最新の履歴」になるように入力してください。現在のハマりゲーム数は下の入力欄に入力します。")
-
-edited_df = st.data_editor(
-    st.session_state.history_data,
-    num_rows="dynamic",
-    use_container_width=True,
-    column_config={
-        "ゲーム数": st.column_config.NumberColumn("ゲーム数", min_value=1, step=1),
-        "種類": st.column_config.SelectboxColumn("種類", options=["BB", "RB"], required=True)
-    }
-)
-
-current_game = st.number_input("現在のゲーム数（ハマりG数）", min_value=0, step=1, key="current_game_state")
+# ==========================================
+# カスタムCSSの注入
+# ==========================================
+st.markdown("""
+<style>
+.badge-big {
+    background-color: #dc3545;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 0.85em;
+    display: inline-block;
+    width: 45px;
+    text-align: center;
+}
+.badge-reg {
+    background-color: #007bff;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 0.85em;
+    display: inline-block;
+    width: 45px;
+    text-align: center;
+}
+.badge-now {
+    background-color: #ffc107;
+    color: black;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 0.85em;
+    display: inline-block;
+    width: 45px;
+    text-align: center;
+}
+.history-row {
+    font-size: 1.05em;
+    padding: 10px 5px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.history-col-num {
+    width: 55px;
+    color: #555;
+    font-size: 0.9em;
+}
+.history-col-game {
+    width: 50px;
+    text-align: right;
+    font-weight: bold;
+}
+.history-col-cum {
+    color: #666;
+    font-size: 0.85em;
+    text-align: right;
+    flex-grow: 1;
+}
+.history-container {
+    background-color: #ffffff;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+    border: 1px solid #e6e6e6;
+}
+.cut-row {
+    background-color: #f8f9fa;
+    opacity: 0.6;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # ==========================================
-# 自動計算ロジック
+# 手動入力・修正エリア (隠し気味にする)
+# ==========================================
+with st.expander("⚙️ 履歴の手動修正・追加", expanded=False):
+    st.caption("※ 一番上が「最新の履歴」になるように入力してください。")
+    edited_df = st.data_editor(
+        st.session_state.history_data,
+        num_rows="dynamic",
+        use_container_width=True,
+        column_config={
+            "ゲーム数": st.column_config.NumberColumn("ゲーム数", min_value=1, step=1),
+            "種類": st.column_config.SelectboxColumn("種類", options=["BB", "RB"], required=True)
+        }
+    )
+    current_game = st.number_input("現在のゲーム数（ハマりG数）", min_value=0, step=1, key="current_game_state")
+
+# ==========================================
+# 自動計算ロジック & 美しいリストUI描画
 # ==========================================
 history = edited_df.to_dict("records")
 
-if not history:
-    st.info("履歴データを入力するか、画像をアップロードしてください。")
+if not history and current_game == 0:
+    st.info("画像を読み取るか、手動で履歴を入力してください。")
 else:
     history_reversed = list(reversed(history))
     
+    # 有利区間リセット地点(32G以内の連チャン抜け後)を探す
     origin_idx = 0
     prev_was_chain = False
     
@@ -317,27 +396,73 @@ else:
             if prev_was_chain:
                 origin_idx = i
             prev_was_chain = False
-            
+
+    # HTMLレンダリングと計算を同時に実行
+    html_out = ["<div class='history-container'>"]
+    
     total_games = 0
-    for i in range(origin_idx, len(history_reversed)):
-        row = history_reversed[i]
+    display_count = 1
+    
+    for i, row in enumerate(history_reversed):
         try:
             g = int(row.get("ゲーム数", 0))
         except (ValueError, TypeError):
             g = 0
         b_type = row.get("種類", "BB")
         
-        total_games += g
-        if b_type == "BB":
-            total_games += 69
-        elif b_type == "RB":
-            total_games += 29
+        is_cut = i < origin_idx
+        row_class = "history-row cut-row" if is_cut else "history-row"
+        
+        if is_cut:
+            html_out.append(f"""
+            <div class='{row_class}'>
+                <span class='history-col-num'>--回目</span>
+                <span class='history-col-game'>{g}G</span>
+                <span class='badge-{'big' if b_type=='BB' else 'reg'}'>{'BIG' if b_type=='BB' else 'REG'}</span>
+                <span class='history-col-cum'>連チャン中 (除外)</span>
+            </div>
+            """)
+        else:
+            start_g = total_games + g
+            if b_type == "BB":
+                end_g = start_g + 69
+                badge = "<span class='badge-big'>BIG</span>"
+            else:
+                end_g = start_g + 29
+                badge = "<span class='badge-reg'>REG</span>"
+                
+            html_out.append(f"""
+            <div class='{row_class}'>
+                <span class='history-col-num'>{display_count}回目</span>
+                <span class='history-col-game'>{g}G</span>
+                {badge}
+                <span class='history-col-cum'>{start_g}G &rarr; {end_g}G</span>
+            </div>
+            """)
+            total_games = end_g
+            display_count += 1
             
+    # 現在のゲーム数行
+    if current_game > 0 or total_games > 0:
+        html_out.append(f"""
+        <div class='history-row' style='background-color: #fffdf5;'>
+            <span class='history-col-num'>現在</span>
+            <span class='history-col-game'>{current_game}G</span>
+            <span class='badge-now'>現在G</span>
+            <span class='history-col-cum' style='color: #000; font-weight: bold;'>{total_games + current_game}G</span>
+        </div>
+        """)
+        
+    html_out.append("</div>")
+    
     total_games += current_game
     remaining_games = max(0, 2000 - total_games)
     
-    st.divider()
-    st.markdown("## 🎯 計算結果")
+    # リストUIの表示
+    st.markdown("### 📜 ボーナス履歴推移 (自動計算)")
+    st.markdown("".join(html_out), unsafe_allow_html=True)
+    
+    st.markdown("## 🎯 最終結果")
     
     col1, col2 = st.columns(2)
     with col1:
