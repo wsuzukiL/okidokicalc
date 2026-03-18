@@ -332,10 +332,13 @@ st.markdown("""
     font-weight: bold;
 }
 .history-col-cum {
-    color: #666;
-    font-size: 0.85em;
+    color: #b30000;
+    font-size: 1.1em;
+    font-weight: 800;
     text-align: right;
     flex-grow: 1;
+    text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff;
+    letter-spacing: 0.5px;
 }
 .history-container {
     background-color: #ffffff;
@@ -446,7 +449,7 @@ else:
                 <span class='history-col-num'>{display_count}回目</span>
                 <span class='history-col-game'>{g}G</span>
                 {badge}
-                <span class='history-col-cum'>{start_g}G &rarr; {end_g}G</span>
+                <span class='history-col-cum' style='font-size: 1.25em;'>{start_g}G &rarr; {end_g}G</span>
             </div>
             """)
             total_games = end_g
@@ -459,7 +462,7 @@ else:
             <span class='history-col-num'>現在</span>
             <span class='history-col-game'>{current_game}G</span>
             <span class='badge-now'>現在G</span>
-            <span class='history-col-cum' style='color: #000; font-weight: bold;'>{total_games + current_game}G</span>
+            <span class='history-col-cum' style='color: #d11a2a; font-size: 1.35em;'>{total_games + current_game}G</span>
         </div>
         """)
         
