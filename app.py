@@ -247,6 +247,9 @@ if "history_data" not in st.session_state:
         ]
     )
 
+if "force_origin_idx" not in st.session_state:
+    st.session_state.force_origin_idx = None
+
 st.markdown("### 画像アップロード (OCR用)")
 uploaded_file = st.file_uploader("データカウンタの履歴画像をアップロードしてください", type=["jpg", "jpeg", "png"])
 
@@ -399,22 +402,24 @@ if not history_bonuses and current_game == 0:
 else:
     history_reversed = list(reversed(history_bonuses))
     
-    # 有利区間リセット地点(32G以内の連チャン抜け後)を探す
+    # 有利区間リセット地点判定 (手動指定優先、なければ自動32Gで探す)
     origin_idx = 0
-    prev_was_chain = False
-    
-    for i, row in enumerate(history_reversed):
-        try:
-            g = int(row.get("ゲーム数", 0))
-        except (ValueError, TypeError):
-            g = 0
-            
-        if g <= 32:
-            prev_was_chain = True
-        else:
-            if prev_was_chain:
-                origin_idx = i
-            prev_was_chain = False
+    if st.session_state.get("force_origin_idx") is not None:
+        origin_idx = st.session_state.force_origin_idx
+    else:
+        prev_was_chain = False
+        for i, row in enumerate(history_reversed):
+            try:
+                g = int(row.get("ゲーム数", 0))
+            except (ValueError, TypeError):
+                g = 0
+                
+            if g <= 32:
+                prev_was_chain = True
+            else:
+                if prev_was_chain:
+                    origin_idx = i
+                prev_was_chain = False
 
     # 先に累計G数と天井までの残りを計算する
     total_games = 0
@@ -440,8 +445,8 @@ else:
         st.markdown(f"## 🎯 計算結果\n### 累計消化ゲーム数: **{total_games} G**")
         st.markdown("---")
 
-    # HTMLレンダリング
-    html_out = ["<div class='history-container'>"]
+    # ネイティブStreamlitコンポーネントによるリストレイアウト
+    st.markdown("<div class='history-container'>", unsafe_allow_html=True)
     
     total_games = 0
     display_count = 1
@@ -457,14 +462,20 @@ else:
         row_class = "history-row cut-row" if is_cut else "history-row"
         
         if is_cut:
-            html_out.append(f"""
-            <div class='{row_class}'>
-                <span class='history-col-num'>--回目</span>
-                <span class='history-col-game'>{g}G</span>
-                <span class='badge-{'big' if 'BIG' in b_type else 'reg'}'>{'BIG' if 'BIG' in b_type else 'REG'}</span>
-                <span class='history-col-cum'>連チャン中 (除外)</span>
-            </div>
-            """)
+            col1, col2, col3, col4 = st.columns([1, 1, 1, 2], vertical_alignment="center")
+            with col1:
+                st.markdown(f"<span class='history-col-num'>--回目</span>", unsafe_allow_html=True)
+            with col2:
+                st.markdown(f"<span class='history-col-game'>{g}G</span>", unsafe_allow_html=True)
+            with col3:
+                badge_type = 'big' if 'BIG' in b_type else 'reg'
+                badge_label = 'BIG' if 'BIG' in b_type else 'REG'
+                st.markdown(f"<span class='badge-{badge_type}'>{badge_label}</span>", unsafe_allow_html=True)
+            with col4:
+                # ユーザーがクリックして起点にできるようにボタンを配置
+                if st.button("🔄 ここから計算", key=f"set_origin_{i}", use_container_width=True):
+                    st.session_state.force_origin_idx = i
+                    st.rerun()
         else:
             start_g = total_games + g
             if "BIG" in b_type:
@@ -474,28 +485,31 @@ else:
                 end_g = start_g + 29
                 badge = "<span class='badge-reg'>REG</span>"
                 
-            html_out.append(f"""
-            <div class='{row_class}'>
-                <span class='history-col-num'>{display_count}回目</span>
-                <span class='history-col-game'>{g}G</span>
-                {badge}
-                <span class='history-col-cum' style='font-size: 1.25em;'>{start_g}G &rarr; {end_g}G</span>
-            </div>
-            """)
+            cols = st.columns([1, 1, 1, 2], vertical_alignment="center")
+            with cols[0]:
+                st.markdown(f"<span class='history-col-num'>{display_count}回目</span>", unsafe_allow_html=True)
+            with cols[1]:
+                st.markdown(f"<span class='history-col-game'>{g}G</span>", unsafe_allow_html=True)
+            with cols[2]:
+                st.markdown(badge, unsafe_allow_html=True)
+            with cols[3]:
+                st.markdown(f"<span class='history-col-cum' style='font-size: 1.25em;'>{start_g}G &rarr; {end_g}G</span>", unsafe_allow_html=True)
+
             total_games = end_g
             display_count += 1
             
+        st.markdown("<hr style='margin: 0.5em 0; border-top: 1px solid #f0f0f0;'/>", unsafe_allow_html=True)
+            
     # 現在のゲーム数行
     if current_game > 0 or total_games > 0:
-        html_out.append(f"""
-        <div class='history-row' style='background-color: #fffdf5;'>
-            <span class='history-col-num'>現在</span>
-            <span class='history-col-game'>{current_game}G</span>
-            <span class='badge-now'>現在G</span>
-            <span class='history-col-cum' style='color: #d11a2a; font-size: 1.35em;'>{total_games}G</span>
-        </div>
-        """)
+        cols = st.columns([1, 1, 1, 2], vertical_alignment="center")
+        with cols[0]:
+            st.markdown(f"<span class='history-col-num'>現在</span>", unsafe_allow_html=True)
+        with cols[1]:
+            st.markdown(f"<span class='history-col-game'>{current_game}G</span>", unsafe_allow_html=True)
+        with cols[2]:
+            st.markdown(f"<span class='badge-now'>現在G</span>", unsafe_allow_html=True)
+        with cols[3]:
+            st.markdown(f"<span class='history-col-cum' style='color: #d11a2a; font-size: 1.35em;'>{total_games}G</span>", unsafe_allow_html=True)
         
-    html_out.append("</div>")
-    
-    st.html("".join(html_out))
+    st.markdown("</div>", unsafe_allow_html=True)
