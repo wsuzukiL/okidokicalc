@@ -359,8 +359,18 @@ st.markdown("""
 # ==========================================
 st.markdown("### ⚙️ 履歴の手動修正・追加")
 st.caption("※ 一番上が「最新の履歴」になるように入力してください。")
+
+def style_br_column(val):
+    if val == "BB":
+        return "color: #dc3545; font-weight: bold;"
+    elif val == "RB":
+        return "color: #007bff; font-weight: bold;"
+    return ""
+
+styled_df = st.session_state.history_data.style.map(style_br_column, subset=["BR"])
+
 edited_df = st.data_editor(
-    st.session_state.history_data,
+    styled_df,
     num_rows="dynamic",
     use_container_width=True,
     column_config={
