@@ -239,6 +239,7 @@ def parse_ocr_text(annotations):
 if "history_data" not in st.session_state:
     st.session_state.history_data = pd.DataFrame(
         [
+            {"BR": "🟡 現在G", "ゲーム数": 32},
             {"BR": "🔴 BIG", "ゲーム数": 120},
             {"BR": "🔵 REG", "ゲーム数": 15},
             {"BR": "🔴 BIG", "ゲーム数": 10},
@@ -247,9 +248,6 @@ if "history_data" not in st.session_state:
             {"BR": "🔵 REG", "ゲーム数": 200},
         ]
     )
-
-if "current_game_state" not in st.session_state:
-    st.session_state.current_game_state = 0
 
 st.markdown("### 画像アップロード (OCR用)")
 uploaded_file = st.file_uploader("データカウンタの履歴画像をアップロードしてください", type=["jpg", "jpeg", "png"])
@@ -266,11 +264,11 @@ if uploaded_file is not None:
                 parsed_history, current_game = parse_ocr_text(annotations)
                 
                 if parsed_history or current_game > 0:
+                    new_history = [{"BR": "🟡 現在G", "ゲーム数": current_game}]
                     if parsed_history:
-                        st.session_state.history_data = pd.DataFrame(parsed_history)
-                    if current_game > 0:
-                        st.session_state.current_game_state = current_game
-                    st.info(f"履歴テーブルを更新し、現在のゲーム数を {current_game}G に設定しました。誤りがあれば修正してください。")
+                        new_history.extend(parsed_history)
+                    st.session_state.history_data = pd.DataFrame(new_history)
+                    st.info(f"履歴テーブルを更新しました。誤りがあれば修正してください。")
                     st.rerun()
                 else:
                     st.warning("画像から履歴データ(列・行)や現在のゲーム数を正しく認識できませんでした。")
@@ -365,22 +363,32 @@ edited_df = st.data_editor(
     num_rows="dynamic",
     use_container_width=True,
     column_config={
-        "BR": st.column_config.SelectboxColumn("BR", options=["🔴 BIG", "🔵 REG"], required=True),
-        "ゲーム数": st.column_config.NumberColumn("ゲーム数", min_value=1, step=1)
+        "BR": st.column_config.SelectboxColumn("BR", options=["🟡 現在G", "🔴 BIG", "🔵 REG"], required=True),
+        "ゲーム数": st.column_config.NumberColumn("ゲーム数", min_value=0, step=1)
     },
     column_order=["BR", "ゲーム数"]
 )
-current_game = st.number_input("現在のゲーム数（ハマりG数）", min_value=0, step=1, key="current_game_state")
 
 # ==========================================
 # 自動計算ロジック & 美しいリストUI描画
 # ==========================================
 history = edited_df.to_dict("records")
 
-if not history and current_game == 0:
+current_game = 0
+history_bonuses = []
+for row in history:
+    if row.get("BR") == "🟡 現在G":
+        try:
+            current_game += int(row.get("ゲーム数", 0))
+        except:
+            pass
+    else:
+        history_bonuses.append(row)
+
+if not history_bonuses and current_game == 0:
     st.info("画像を読み取るか、手動で履歴を入力してください。")
 else:
-    history_reversed = list(reversed(history))
+    history_reversed = list(reversed(history_bonuses))
     
     # 有利区間リセット地点(32G以内の連チャン抜け後)を探す
     origin_idx = 0
