@@ -138,7 +138,7 @@ def parse_ocr_text(annotations):
     for item in items:
         text = item["text"].upper()
         if bb_rb_pattern.match(text) or "BIG" in text or "REG" in text or "BB" in text or "RB" in text:
-            t = "🔴 BB" if any(x in text for x in ["BIG", "BB", "8B"]) else "🔵 RB"
+            t = "🔴 BIG" if any(x in text for x in ["BIG", "BB", "8B"]) else "🔵 REG"
             types.append({**item, "val": t})
             
         elif number_pattern.match(text) or text.isdigit():
@@ -239,12 +239,12 @@ def parse_ocr_text(annotations):
 if "history_data" not in st.session_state:
     st.session_state.history_data = pd.DataFrame(
         [
-            {"BR": "🔴 BB", "ゲーム数": 120},
-            {"BR": "🔵 RB", "ゲーム数": 15},
-            {"BR": "🔴 BB", "ゲーム数": 10},
-            {"BR": "🔴 BB", "ゲーム数": 400},
-            {"BR": "🔴 BB", "ゲーム数": 5},
-            {"BR": "🔵 RB", "ゲーム数": 200},
+            {"BR": "🔴 BIG", "ゲーム数": 120},
+            {"BR": "🔵 REG", "ゲーム数": 15},
+            {"BR": "🔴 BIG", "ゲーム数": 10},
+            {"BR": "🔴 BIG", "ゲーム数": 400},
+            {"BR": "🔴 BIG", "ゲーム数": 5},
+            {"BR": "🔵 REG", "ゲーム数": 200},
         ]
     )
 
@@ -365,7 +365,7 @@ edited_df = st.data_editor(
     num_rows="dynamic",
     use_container_width=True,
     column_config={
-        "BR": st.column_config.SelectboxColumn("BR", options=["🔴 BB", "🔵 RB"], required=True),
+        "BR": st.column_config.SelectboxColumn("BR", options=["🔴 BIG", "🔵 REG"], required=True),
         "ゲーム数": st.column_config.NumberColumn("ゲーム数", min_value=1, step=1)
     },
     column_order=["BR", "ゲーム数"]
@@ -410,7 +410,7 @@ else:
             g = int(row.get("ゲーム数", 0))
         except (ValueError, TypeError):
             g = 0
-        b_type = row.get("BR", "🔴 BB")
+        b_type = row.get("BR", "🔴 BIG")
         
         is_cut = i < origin_idx
         row_class = "history-row cut-row" if is_cut else "history-row"
@@ -420,13 +420,13 @@ else:
             <div class='{row_class}'>
                 <span class='history-col-num'>--回目</span>
                 <span class='history-col-game'>{g}G</span>
-                <span class='badge-{'big' if 'BB' in b_type else 'reg'}'>{'BIG' if 'BB' in b_type else 'REG'}</span>
+                <span class='badge-{'big' if 'BIG' in b_type else 'reg'}'>{'BIG' if 'BIG' in b_type else 'REG'}</span>
                 <span class='history-col-cum'>連チャン中 (除外)</span>
             </div>
             """)
         else:
             start_g = total_games + g
-            if "BB" in b_type:
+            if "BIG" in b_type:
                 end_g = start_g + 69
                 badge = "<span class='badge-big'>BIG</span>"
             else:
