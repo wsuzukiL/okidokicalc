@@ -364,19 +364,19 @@ results_placeholder = st.empty()
 # ==========================================
 # 手動入力・修正エリア
 # ==========================================
-st.markdown("### ⚙️ 履歴")
-st.caption("※ 一番上が「最新の履歴」になるように入力してください。")
+with st.expander("✏️ 履歴データを手動で修正・追加する", expanded=False):
+    st.caption("※ 一番上が「最新の履歴」になるように入力してください。")
 
-edited_df = st.data_editor(
-    st.session_state.history_data,
-    num_rows="dynamic",
-    use_container_width=True,
-    column_config={
-        "BR": st.column_config.SelectboxColumn("BR", options=["🟡 現在G", "🔴 BIG", "🔵 REG"], required=True),
-        "ゲーム数": st.column_config.NumberColumn("ゲーム数", min_value=0, step=1)
-    },
-    column_order=["BR", "ゲーム数"]
-)
+    edited_df = st.data_editor(
+        st.session_state.history_data,
+        num_rows="dynamic",
+        use_container_width=True,
+        column_config={
+            "BR": st.column_config.SelectboxColumn("BR", options=["🟡 現在G", "🔴 BIG", "🔵 REG"], required=True),
+            "ゲーム数": st.column_config.NumberColumn("ゲーム数", min_value=0, step=1)
+        },
+        column_order=["BR", "ゲーム数"]
+    )
 
 # ==========================================
 # 自動計算ロジック & 美しいリストUI描画
