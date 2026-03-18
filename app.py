@@ -14,6 +14,7 @@ from statistics import pstdev
 # ==========================================
 cookie_manager = stx.CookieManager()
 
+# 環境変数やSecretsからの取得を優先
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
 if not GOOGLE_API_KEY:
     try:
@@ -21,35 +22,53 @@ if not GOOGLE_API_KEY:
     except (FileNotFoundError, KeyError):
         pass
 
-if not GOOGLE_API_KEY:
-    # クッキーから取得 (モバイル等で保存した場合)
-    val = cookie_manager.get(cookie="google_api_key")
-    if val:
-        GOOGLE_API_KEY = val
+# セッションステートにAPIキーを保持する（再描画時の安定化のため）
+if "api_key_state" not in st.session_state:
+    st.session_state.api_key_state = ""
+
+# クッキーから取得
+cookie_val = cookie_manager.get(cookie="google_api_key")
+if cookie_val and not GOOGLE_API_KEY:
+    GOOGLE_API_KEY = cookie_val
+    st.session_state.api_key_state = cookie_val
 
 # 画面構成: タイトル
 st.title("沖ドキ！GOLD 有利区間計算ツール")
 
 # 初回APIキー入力UI
-if not GOOGLE_API_KEY:
+if not GOOGLE_API_KEY and not st.session_state.api_key_state:
     st.warning("⚠️ Google Cloud Vision APIキーが設定されていません。")
     st.info("初回のみ、以下の枠にAPIキーを入力してください。お使いのスマホ(ブラウザ)に安全に保存され、次回からは入力を省略できます。")
-    api_key_input = st.text_input("🔑 APIキー", type="password")
-    if st.button("キーを保存して開始する", type="primary"):
-        if api_key_input:
-            cookie_manager.set("google_api_key", api_key_input, expires_at=datetime.datetime(2030, 1, 1))
-            st.success("APIキーを保存しました！ページをリロードしてください。")
-            st.rerun()
-        else:
-            st.error("APIキーを入力してください。")
+    
+    with st.form(key="api_form"):
+        api_key_input = st.text_input("🔑 APIキー", type="password")
+        submit_button = st.form_submit_button(label="キーを保存して開始する")
+        
+        if submit_button:
+            if api_key_input:
+                st.session_state.api_key_state = api_key_input
+                cookie_manager.set("google_api_key", api_key_input, expires_at=datetime.datetime(2030, 1, 1))
+                st.success("APIキーを保存しました！画面をリロードしています...")
+                # Streamlitのライフサイクル都合上、少し間を置いてリランするような挙動にする
+                import time
+                time.sleep(1)
+                st.rerun()
+            else:
+                st.error("APIキーを入力してください。")
     st.stop()  # キーがない場合はここで画面描画を停止
+
+# キーが確定した場合、状態に同期
+if GOOGLE_API_KEY:
+    st.session_state.api_key_state = GOOGLE_API_KEY
 
 # サイドバーにリセットボタン配置
 with st.sidebar:
     st.header("⚙️ 設定")
     if st.button("🔄 APIキーの保存をリセット"):
         cookie_manager.delete("google_api_key")
-        st.success("APIキーを削除しました。リロードしてください。")
+        st.session_state.api_key_state = ""
+        import time
+        time.sleep(0.5)
         st.rerun()
 
 # ==========================================
