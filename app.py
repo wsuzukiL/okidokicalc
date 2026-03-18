@@ -356,6 +356,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
+# 🎯 計算結果表示用プレースホルダー（上部に表示するため）
+# ==========================================
+results_placeholder = st.empty()
+
+# ==========================================
 # 手動入力・修正エリア
 # ==========================================
 st.markdown("### ⚙️ 履歴の手動修正・追加")
@@ -429,22 +434,23 @@ else:
     total_games += current_game
     remaining_games = max(0, 2000 - total_games)
     
-    # 🎯 計算結果を先に表示
-    st.markdown("## 🎯 計算結果")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric(label="累計消化ゲーム数", value=f"{total_games} G")
-    with col2:
-        st.metric(label="2000Gまでの残り", value=f"{remaining_games} G")
+    # 🎯 計算結果を上部のプレースホルダーに表示
+    with results_placeholder.container():
+        st.markdown("## 🎯 計算結果")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric(label="累計消化ゲーム数", value=f"{total_games} G")
+        with col2:
+            st.metric(label="2000Gまでの残り", value=f"{remaining_games} G")
 
-    if remaining_games == 0:
-        st.success("🎉 すでに有利区間天井(2000G)に到達している可能性があります！")
-    elif remaining_games <= 500:
-        st.warning("🔥 天井まであと少しです！")
-    else:
-        st.info("まだまだ天井までは距離があります。")
-        
-    st.markdown("---")
+        if remaining_games == 0:
+            st.success("🎉 すでに有利区間天井(2000G)に到達している可能性があります！")
+        elif remaining_games <= 500:
+            st.warning("🔥 天井まであと少しです！")
+        else:
+            st.info("まだまだ天井までは距離があります。")
+            
+        st.markdown("---")
 
     # HTMLレンダリング
     html_out = ["<div class='history-container'>"]
