@@ -253,6 +253,9 @@ st.markdown("### 画像アップロード (OCR用)")
 uploaded_file = st.file_uploader("データカウンタの履歴画像をアップロードしてください", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
+    with st.expander("🖼️ アップロードした画像を見る", expanded=False):
+        st.image(uploaded_file, use_container_width=True)
+        
     if st.button("🔍 画像から履歴を読み取る"):
         with st.spinner("画像を解析中..."):
             image_bytes = uploaded_file.getvalue()
