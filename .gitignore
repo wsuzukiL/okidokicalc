@@ -1,0 +1,7 @@
+# Python
+__pycache__/
+*.pyc
+
+# Streamlit secrets (絶対にGitHubに上げない)
+.streamlit/
+ocr_debug.txt
