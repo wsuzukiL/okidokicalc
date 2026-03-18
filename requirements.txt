@@ -3,3 +3,5 @@ google-cloud-vision
 pillow
 pandas
 requests
+extra-streamlit-components
+requests
