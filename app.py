@@ -522,6 +522,6 @@ else:
         with cols[2]:
             st.markdown(f"<span class='badge-now'>現在累計G</span>", unsafe_allow_html=True)
         with cols[3]:
-            st.markdown(f"<span class='history-col-cum' style='color: #d11a2a; font-size: 1.35em;'>{final_total}G</span>", unsafe_allow_html=True)
+            st.markdown(f"<span class='history-col-cum' style='color: #d11a2a; font-size: 1.6em; font-weight: 900;'>{final_total}G</span>", unsafe_allow_html=True)
         
     st.markdown("</div>", unsafe_allow_html=True)
