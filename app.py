@@ -37,24 +37,49 @@ st.markdown("""
     }
     /* ヘッダー・フッター非表示 */
     header {visibility: hidden;}
-    /* ファイルアップローダーの小型化 */
+    /* --- ファイルアップローダーを完全なシンプルボタン化 --- */
+    /* ドロップゾーンの枠線や背景を消す */
     [data-testid="stFileUploaderDropzone"] {
-        padding: 10px !important;
+        padding: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        min-height: 0 !important;
     }
-    [data-testid="stFileUploaderDropzone"] svg {
-        width: 30px !important;
-        height: 30px !important;
-        margin-bottom: 5px !important;
+    /* ドラッグアンドドロップ案内や雲アイコンを完全に隠す */
+    [data-testid="stFileUploaderDropzone"] > div:first-child {
+        display: none !important; 
     }
-    [data-testid="stFileUploaderDropzone"] div {
-        font-size: 0.8rem !important;
+    /* "Browse files" ボタンの見た目をカスタマイズ */
+    [data-testid="stFileUploaderDropzone"] button {
+        width: 100% !important;
+        padding: 12px !important;
+        background-color: #3b82f6 !important; /* スタイリッシュな青 */
+        color: white !important;
+        font-weight: 700 !important;
+        border-radius: 8px !important;
+        border: none !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        position: relative !important;
     }
-    [data-testid="stFileUploaderDropzone"] small {
-        font-size: 0.6rem !important;
+    /* "Browse files"という元の英語テキストを透明にして隠す */
+    [data-testid="stFileUploaderDropzone"] button span {
+        opacity: 0 !important;
     }
-    /* アップローダーのラベル（「履歴画像をアップロード」）も小さく */
-    [data-testid="stFileUploader"] label p {
-        font-size: 0.8rem !important;
+    /* その上から「画像アップロード」という日本語文字を被せる */
+    [data-testid="stFileUploaderDropzone"] button::after {
+        content: "📸 画像アップロード" !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        opacity: 1 !important;
+        color: white !important;
+        font-size: 1rem !important;
+        pointer-events: none !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -242,8 +267,7 @@ if "history_data" not in st.session_state:
 if "force_origin_idx" not in st.session_state:
     st.session_state.force_origin_idx = None
 
-st.markdown("<div style='font-size:0.8rem; font-weight:bold; margin-bottom:-10px; margin-top: 10px; color:#555;'>画像アップロード</div>", unsafe_allow_html=True)
-uploaded_file = st.file_uploader("履歴画像をアップロード", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
+uploaded_file = st.file_uploader("", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
 
 if uploaded_file is not None:
     # プレビュー画像を極力小さくサムネイル表示 (1/3サイズ)
