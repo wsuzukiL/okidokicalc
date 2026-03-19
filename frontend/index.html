@@ -59,19 +59,17 @@
       padding: 10px 5px; background: #fff; border-radius: 12px; 
       box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #eaeaea; 
     }
-    .history-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+    .history-row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; gap: 5px; }
     .cut-row { background: #fdfcfc; opacity: 0.5; }
     
-    .col-num { width: 50px; color: #555; font-size: 0.95em; font-weight: 500; text-align: left; padding-left: 5px;}
-    .col-game { width: 45px; text-align: right; font-weight: 700; font-size: 1.1em; margin-right:5px;}
-    .badge { 
-      padding: 5px 0; border-radius: 20px; font-weight: bold; font-size: 0.9em; width: 55px; 
-      text-align: center; color: white; cursor: pointer; transition: transform 0.1s, opacity 0.1s; 
-    }
-    .badge:active { transform: scale(0.92); opacity: 0.8; }
+    .col-num { width: 45px; color: #555; font-size: 0.95em; font-weight: 500; text-align: left; padding-left: 5px;}
+    .col-br { width: 35px; font-weight: 900; font-size: 1.1em; cursor: pointer; text-align: center; }
+    .txt-big { color: #d11a2a; }
+    .txt-reg { color: #0066cc; }
+    .col-game { width: 50px; text-align: left; font-weight: 700; font-size: 1.1em; color: #222;}
     
-    .col-cum { color: #333; font-size: 1.1em; text-align: right; flex-grow: 1; margin-left:5px; padding-right:5px;}
-    .col-cum-gray { color: #999; font-size: 1em; text-align: right; flex-grow: 1; margin-left:5px; padding-right:5px;}
+    .col-cum { color: #333; font-size: 1.05em; text-align: right; flex-grow: 1; padding-right:5px;}
+    .col-cum-gray { color: #999; font-size: 1em; text-align: right; flex-grow: 1; padding-right:5px;}
     
     /* Boundary Line */
     .boundary-wrap { 
@@ -215,9 +213,7 @@
       let total_games = 0;
       let len = currentData.history.length;
       
-      // We render boundary above index `origin_idx`
-      // So if origin_idx == 0, boundary is at the very top
-      let d_cnt = 1;
+      let current_count = 1;
 
       if(len === 0 && currentData.current_game === 0) {
          html += "<div class='history-container'><div class='empty-msg'>履歴がありません。<br>上のテンキーで入力・追加してください。</div></div>";
@@ -234,26 +230,26 @@
         let row = currentData.history[i];
         let is_cut = i < currentData.origin_idx;
         let isBig = row.BR.includes("BIG");
-        let bClass = isBig ? "bg-big" : "bg-reg";
+        let txtClass = isBig ? "txt-big" : "txt-reg";
         let bLbl = isBig ? "BIG" : "REG";
         let rowClass = "history-row" + (is_cut ? " cut-row" : "");
+        
+        let count_str = is_cut ? `<span style="color:#ccc;">-</span>` : `${current_count++}回目`;
 
         html += `<div class='${rowClass}'>
-          <div class='col-num'>${d_cnt}回目</div>
-          <div class='col-game'>${row["ゲーム数"]}G</div>
-          <div class='badge ${bClass}' onclick='toggleBR(${i})'>${bLbl}</div>`;
+          <div class='col-num'>${count_str}</div>
+          <div class='col-br ${txtClass}' onclick='toggleBR(${i})'>${bLbl}</div>
+          <div class='col-game'>${row["ゲーム数"]}G</div>`;
           
         if(is_cut) {
           html += `<div class='col-cum-gray'>除外</div>`;
         } else {
           let stG = total_games + row["ゲーム数"];
-          // Note user's image: 88G(REG) -> 88G to 117G (which is 88+29)
-          // 256G(BIG) 373G to 442G (373+69)
           let enG = stG + (isBig ? 69 : 29);
           total_games = enG;
           html += `<div class='col-cum'>${stG}G &rarr; ${enG}G</div>`;
         }
-        d_cnt++;
+        
         html += `</div>`;
       }
       
@@ -264,9 +260,9 @@
       if (fg > 0 || total_games > 0) {
         let ft = total_games + fg;
         html += `<div class='history-row current-row'>
-          <div class='col-num'>現在</div>
+          <div class='col-num'>${fg > 0 ? (current_count + "回?") : "現在"}</div>
+          <div class='col-br' style='color:#ffc107; font-weight:900;'>現在G</div>
           <div class='col-game'>${fg}G</div>
-          <div class='badge bg-now'>現在G</div>
           <div class='final-total'>${ft}G</div>
         </div>`;
       }

@@ -320,7 +320,7 @@ st.markdown(f"""
 # カスタムコンポーネントの呼び出し
 import streamlit.components.v1 as components
 _frontend_dir = os.path.join(os.path.dirname(__file__), "frontend")
-history_ui = components.declare_component("history_ui", path=_frontend_dir)
+okidoki_keypad = components.declare_component("okidoki_keypad", path=_frontend_dir)
 
 py_data = {
     "history": [{"BR": r.get("BR", "🔴 BIG"), "ゲーム数": int(r.get("ゲーム数", 0))} for r in history_reversed],
@@ -328,7 +328,7 @@ py_data = {
     "origin_idx": origin_idx
 }
 
-result = history_ui(data=py_data, key="history_ui_instance")
+result = okidoki_keypad(data=py_data, key="history_ui_instance")
 
 if result is not None:
     new_origin = result.get("origin_idx", origin_idx)
