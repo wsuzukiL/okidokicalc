@@ -269,96 +269,93 @@ for row in history:
     else:
         history_bonuses.append(row)
 
-if not history_bonuses and current_game == 0:
-    st.info("画像を読み取るか、手動で履歴を入力してください。")
-else:
-    history_reversed = list(reversed(history_bonuses))
-    
-    # 有利区間リセット地点判定 (手動指定優先、なければ自動32Gで探す)
-    origin_idx = 0
-    if st.session_state.get("force_origin_idx") is not None:
-        origin_idx = st.session_state.force_origin_idx
-    else:
-        prev_was_chain = False
-        for i, row in enumerate(history_reversed):
-            try:
-                g = int(row.get("ゲーム数", 0))
-            except (ValueError, TypeError):
-                g = 0
-                
-            if g <= 32:
-                prev_was_chain = True
-            else:
-                if prev_was_chain:
-                    origin_idx = i
-                prev_was_chain = False
+history_reversed = list(reversed(history_bonuses))
 
-    # 先に累計G数と天井までの残りを計算する
-    total_games = 0
+# 有利区間リセット地点判定 (手動指定優先、なければ自動32Gで探す)
+origin_idx = 0
+if st.session_state.get("force_origin_idx") is not None:
+    origin_idx = st.session_state.force_origin_idx
+else:
+    prev_was_chain = False
     for i, row in enumerate(history_reversed):
-        is_cut = i < origin_idx
-        if not is_cut:
-            try:
-                g = int(row.get("ゲーム数", 0))
-            except (ValueError, TypeError):
-                g = 0
-            b_type = row.get("BR", "🔴 BIG")
-            start_g = total_games + g
-            if "BIG" in b_type:
-                total_games = start_g + 69
-            else:
-                total_games = start_g + 29
-                
-    total_games += current_game
-    remaining_games = max(0, 2000 - total_games)
-    
-    # サマリーダッシュボード
-    st.markdown(f"""
-    <div style="display:flex; justify-content:space-between; background:#333; color:#fff; padding:10px 15px; border-radius:12px; margin-bottom:15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        <div style="font-size:0.95em;">残り有利(2000G)<br><span style="font-size:1.6em;color:#ffc107;font-weight:900;">{remaining_games}G</span></div>
-        <div style="font-size:0.95em; text-align:right;">計算対象 累計<br><span style="font-size:1.6em;color:#4facfe;font-weight:900;">{total_games}G</span></div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # カスタムコンポーネントの呼び出し
-    import streamlit.components.v1 as components
-    _frontend_dir = os.path.join(os.path.dirname(__file__), "frontend")
-    history_ui = components.declare_component("history_ui", path=_frontend_dir)
-    
-    py_data = {
-        "history": [{"BR": r.get("BR", "🔴 BIG"), "g": int(r.get("ゲーム数", 0))} for r in history_reversed],
-        "current_game": current_game,
-        "origin_idx": origin_idx
-    }
-    
-    result = history_ui(data=py_data, key="history_ui_instance")
-    
-    if result is not None:
-        new_origin = result.get("origin_idx", origin_idx)
-        updated_history = result.get("history_updated", [])
-        updated_current = result.get("current_game", current_game)
-        
-        changed = False
-        if new_origin != origin_idx:
-            changed = True
+        try:
+            g = int(row.get("ゲーム数", 0))
+        except (ValueError, TypeError):
+            g = 0
             
-        if updated_current != current_game:
-            changed = True
-            
-        if len(updated_history) != len(history_reversed):
-            changed = True
+        if g <= 32:
+            prev_was_chain = True
         else:
-            for i, row in enumerate(history_reversed):
-                row_g = int(row.get("ゲーム数", 0))
-                upd_g = int(updated_history[i].get("ゲーム数", 0))
-                if row.get("BR") != updated_history[i].get("BR") or row_g != upd_g:
-                    changed = True
-                    break
-                    
-        if changed:
-            st.session_state.force_origin_idx = new_origin
-            # 最新を上に再構築
-            rebuilt = [{"BR": "🟡 現在G", "ゲーム数": updated_current}]
-            rebuilt.extend(reversed(updated_history))
-            st.session_state.history_data = pd.DataFrame(rebuilt)
-            st.rerun()
+            if prev_was_chain:
+                origin_idx = i
+            prev_was_chain = False
+
+# 先に累計G数と天井までの残りを計算する
+total_games = 0
+for i, row in enumerate(history_reversed):
+    is_cut = i < origin_idx
+    if not is_cut:
+        try:
+            g = int(row.get("ゲーム数", 0))
+        except (ValueError, TypeError):
+            g = 0
+        b_type = row.get("BR", "🔴 BIG")
+        start_g = total_games + g
+        if "BIG" in b_type:
+            total_games = start_g + 69
+        else:
+            total_games = start_g + 29
+            
+total_games += current_game
+remaining_games = max(0, 2000 - total_games)
+
+# サマリーダッシュボード
+st.markdown(f"""
+<div style="display:flex; justify-content:space-between; background:#333; color:#fff; padding:10px 15px; border-radius:12px; margin-bottom:15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <div style="font-size:0.95em;">残り有利(2000G)<br><span style="font-size:1.6em;color:#ffc107;font-weight:900;">{remaining_games}G</span></div>
+    <div style="font-size:0.95em; text-align:right;">計算対象 累計<br><span style="font-size:1.6em;color:#4facfe;font-weight:900;">{total_games}G</span></div>
+</div>
+""", unsafe_allow_html=True)
+
+# カスタムコンポーネントの呼び出し
+import streamlit.components.v1 as components
+_frontend_dir = os.path.join(os.path.dirname(__file__), "frontend")
+history_ui = components.declare_component("history_ui", path=_frontend_dir)
+
+py_data = {
+    "history": [{"BR": r.get("BR", "🔴 BIG"), "g": int(r.get("ゲーム数", 0))} for r in history_reversed],
+    "current_game": current_game,
+    "origin_idx": origin_idx
+}
+
+result = history_ui(data=py_data, key="history_ui_instance")
+
+if result is not None:
+    new_origin = result.get("origin_idx", origin_idx)
+    updated_history = result.get("history_updated", [])
+    updated_current = result.get("current_game", current_game)
+    
+    changed = False
+    if new_origin != origin_idx:
+        changed = True
+        
+    if updated_current != current_game:
+        changed = True
+        
+    if len(updated_history) != len(history_reversed):
+        changed = True
+    else:
+        for i, row in enumerate(history_reversed):
+            row_g = int(row.get("ゲーム数", 0))
+            upd_g = int(updated_history[i].get("ゲーム数", 0))
+            if row.get("BR") != updated_history[i].get("BR") or row_g != upd_g:
+                changed = True
+                break
+                
+    if changed:
+        st.session_state.force_origin_idx = new_origin
+        # 最新を上に再構築
+        rebuilt = [{"BR": "🟡 現在G", "ゲーム数": updated_current}]
+        rebuilt.extend(reversed(updated_history))
+        st.session_state.history_data = pd.DataFrame(rebuilt)
+        st.rerun()
