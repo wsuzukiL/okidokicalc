@@ -4,35 +4,126 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; background: transparent; }
-    .history-container { padding: 5px 10px; background: #fff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #eaeaea; }
-    .history-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
-    .cut-row { background: #fdfdfd; opacity: 0.55; }
-    .col-num { width: 50px; color: #888; font-size: 0.9em; font-weight: 500;}
-    .col-game { width: 50px; text-align: right; font-weight: 700; font-size: 1.1em; }
-    .badge { padding: 4px 0; border-radius: 8px; font-weight: bold; font-size: 1.05em; width: 55px; text-align: center; color: white; cursor: pointer; transition: transform 0.1s, opacity 0.1s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .badge:active { transform: scale(0.92); opacity: 0.8; }
-    .bg-big { background-image: linear-gradient(135deg, #f05053, #dc3545); }
-    .bg-reg { background-image: linear-gradient(135deg, #4facfe, #00f2fe); }
-    .bg-now { background-color: #ffc107; color: black; font-weight: 900; width: 90px; box-shadow: 0 2px 4px rgba(255,193,7,0.3); }
-    .col-cum { color: #d11a2a; font-size: 1.15em; font-weight: 800; text-align: right; flex-grow: 1; margin-left:10px; text-shadow: 1px 1px 0 #fff; }
-    .col-cum-gray { color: #999; font-size: 1em; text-align: right; flex-grow: 1; margin-left:10px; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+      margin: 0; padding: 0; 
+      user-select: none; -webkit-user-select: none; 
+      background: transparent; color: #333;
+    }
     
-    .boundary-wrap { height: 44px; position: relative; margin: -5px 0; z-index: 10; touch-action: none; display: flex; align-items: center; justify-content: center; cursor: grab; }
+    /* === Keypad & Input Area === */
+    .input-section {
+      background: #fff; padding: 10px; border-radius: 12px;
+      margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      border: 1px solid #eaeaea;
+    }
+    .display-box {
+      background: #fdfbf7; border: 2px solid #f2e6d9; border-radius: 8px;
+      height: 50px; margin-bottom: 10px; text-align: right; font-size: 2em;
+      font-weight: 700; padding: 0 15px; line-height: 50px; color: #333;
+      letter-spacing: 2px; overflow: hidden;
+    }
+    .display-placeholder { color: #ccc; font-size: 0.6em; }
+    
+    .keypad-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;
+    }
+    .key-btn {
+      background: #faeedf; color: #333; border: none; border-radius: 8px;
+      height: 55px; font-size: 1.6em; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; transition: background 0.1s;
+    }
+    .key-btn:active { background: #ebd5bf; }
+    
+    /* === Action Buttons === */
+    .action-row { display: flex; gap: 8px; margin-bottom: 10px; }
+    .act-btn {
+      flex: 1; border: none; border-radius: 8px; height: 44px; font-size: 1.1em;
+      font-weight: bold; color: white; cursor: pointer; transition: opacity 0.1s, transform 0.1s;
+    }
+    .act-btn:active { opacity: 0.8; transform: scale(0.96); }
+    .btn-big { background-color: #dc3545; }
+    .btn-reg { background-color: #0d6efd; }
+    .btn-now { background: #ffc107; color: #333; }
+    
+    .delete-row { display: flex; gap: 8px;}
+    .del-btn {
+      flex: 1; background: #6c757d; color: white; border: none; border-radius: 6px;
+      padding: 10px 0; font-size: 0.95em; font-weight: bold; cursor: pointer;
+    }
+    .del-btn:active { opacity: 0.8; }
+    .btn-del-all { background: #343a40; }
+
+    /* === History List === */
+    .history-container { 
+      padding: 10px 5px; background: #fff; border-radius: 12px; 
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #eaeaea; 
+    }
+    .history-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+    .cut-row { background: #fdfcfc; opacity: 0.5; }
+    
+    .col-num { width: 50px; color: #555; font-size: 0.95em; font-weight: 500; text-align: left; padding-left: 5px;}
+    .col-game { width: 45px; text-align: right; font-weight: 700; font-size: 1.1em; margin-right:5px;}
+    .badge { 
+      padding: 5px 0; border-radius: 20px; font-weight: bold; font-size: 0.9em; width: 55px; 
+      text-align: center; color: white; cursor: pointer; transition: transform 0.1s, opacity 0.1s; 
+    }
+    .badge:active { transform: scale(0.92); opacity: 0.8; }
+    
+    .col-cum { color: #333; font-size: 1.1em; text-align: right; flex-grow: 1; margin-left:5px; padding-right:5px;}
+    .col-cum-gray { color: #999; font-size: 1em; text-align: right; flex-grow: 1; margin-left:5px; padding-right:5px;}
+    
+    /* Boundary Line */
+    .boundary-wrap { 
+      height: 40px; position: relative; margin: 0; z-index: 10; touch-action: none; display: flex; align-items: center; justify-content: center; cursor: grab; background: #fbfbfb;
+    }
     .boundary-wrap:active { cursor: grabbing; }
-    .boundary-line { position: absolute; width: 100%; height: 6px; background: repeating-linear-gradient(90deg, #dc3545, #dc3545 12px, transparent 12px, transparent 24px); top: 50%; transform: translateY(-50%); opacity: 0.8; }
-    .boundary-label { background: #fff; border: 2px solid #dc3545; color: #dc3545; padding: 4px 16px; font-size: 0.85em; font-weight: 800; border-radius: 20px; box-shadow: 0 4px 8px rgba(220,53,69,0.2); position: relative; display: flex; align-items: center; gap: 6px;}
+    .boundary-line { 
+      position: absolute; width: 100%; height: 30px; background-color: #dcedc8; border: 1px solid #c5e1a5; border-radius: 4px; z-index: -1;
+    }
+    .boundary-label { color: #33691e; font-size: 1em; font-weight: bold; display: flex; align-items: center; gap: 8px;}
     
     .current-row { border-bottom: none; border-top: 2px dashed #ddd; padding-top: 16px; margin-top: 5px; }
-    .final-total { color: #d11a2a; font-size: 1.6em; font-weight: 900; text-align: right; flex-grow: 1; margin-left: 10px; }
+    .final-total { color: #d11a2a; font-size: 1.5em; font-weight: 900; text-align: right; flex-grow: 1; margin-left: 10px; padding-right:5px;}
     
     .dragging-overlay { position: fixed; top:0; left:0; width:100%; height:100%; z-index: 9999; display: none; }
+    .empty-msg {text-align:center; padding: 20px; color: #888;}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/streamlit-component-lib@1.3.0/dist/streamlit.js"></script>
 </head>
 <body>
-  <!-- Overlay to prevent unwanted scrolling and selection during drag -->
   <div class="dragging-overlay" id="dragOverlay"></div>
+  
+  <div class="input-section">
+    <div class="display-box" id="displayBox"><span class="display-placeholder">数値を入力...</span></div>
+    
+    <div class="keypad-grid">
+      <button class="key-btn" onclick="pressKey('1')">1</button>
+      <button class="key-btn" onclick="pressKey('2')">2</button>
+      <button class="key-btn" onclick="pressKey('3')">3</button>
+      <button class="key-btn" onclick="pressKey('4')">4</button>
+      <button class="key-btn" onclick="pressKey('5')">5</button>
+      <button class="key-btn" onclick="pressKey('6')">6</button>
+      <button class="key-btn" onclick="pressKey('7')">7</button>
+      <button class="key-btn" onclick="pressKey('8')">8</button>
+      <button class="key-btn" onclick="pressKey('9')">9</button>
+      <button class="key-btn" onclick="pressClear()" style="font-size: 1.2em;">クリア</button>
+      <button class="key-btn" onclick="pressKey('0')">0</button>
+      <button class="key-btn" onclick="pressBackspace()">⌫</button>
+    </div>
+    
+    <div class="action-row">
+      <button class="act-btn btn-big" onclick="addRecord('BIG')">BIG</button>
+      <button class="act-btn btn-reg" onclick="addRecord('REG')">REG</button>
+      <button class="act-btn btn-now" onclick="addRecord('現在G')">現在</button>
+    </div>
+    
+    <div class="delete-row">
+      <button class="del-btn" onclick="deleteLast()">1つ削除</button>
+      <button class="del-btn btn-del-all" onclick="clearAll()">全て削除</button>
+    </div>
+  </div>
+
   <div id="root"></div>
 
   <script>
@@ -40,14 +131,103 @@
     let isDragging = false;
     let startY = 0;
     let startOrigin = 0;
-    let rowHeight = 46; // Approximate row height based on css padding+font
+    let rowHeight = 49;
+    
+    let inputStr = "";
+
+    function updateDisplay() {
+      let box = document.getElementById("displayBox");
+      if(inputStr === "") {
+        box.innerHTML = '<span class="display-placeholder">数値を入力...</span>';
+      } else {
+        box.innerHTML = inputStr;
+      }
+    }
+
+    function pressKey(char) {
+      if(inputStr.length < 4) {
+        if(inputStr === "0") inputStr = char;
+        else inputStr += char;
+        updateDisplay();
+      }
+    }
+    
+    function pressBackspace() {
+      if(inputStr.length > 0) {
+        inputStr = inputStr.slice(0, -1);
+        updateDisplay();
+      }
+    }
+
+    function pressClear() {
+      inputStr = "";
+      updateDisplay();
+    }
+
+    // ========== Data Mutation ==========
+    
+    function addRecord(type) {
+      if(!currentData) return;
+      let gVal = parseInt(inputStr || "0", 10);
+      
+      if(type === '現在G') {
+        currentData.current_game = gVal;
+      } else {
+        let br = type.includes('BIG') ? "🔴 BIG" : "🔵 REG";
+        // Append to history (oldest is index 0, so newest goes to the end)
+        currentData.history.push({ BR: br, "ゲーム数": gVal });
+      }
+      
+      pressClear();
+      render();
+      sendUpdate();
+    }
+    
+    function deleteLast() {
+      if(!currentData) return;
+      if(currentData.current_game > 0) {
+        currentData.current_game = 0;
+      } else if(currentData.history.length > 0) {
+        currentData.history.pop();
+        if(currentData.origin_idx > currentData.history.length) {
+            currentData.origin_idx = currentData.history.length;
+        }
+      }
+      render();
+      sendUpdate();
+    }
+    
+    function clearAll() {
+      if(!currentData) return;
+      if(confirm("全ての履歴を削除しますか？")) {
+        currentData.history = [];
+        currentData.current_game = 0;
+        currentData.origin_idx = 0;
+        render();
+        sendUpdate();
+      }
+    }
+
+    // ========== Rendering ==========
 
     function render() {
       if(!currentData) return;
-      let html = "<div class='history-container'>";
+      let html = "";
       let total_games = 0;
-      let d_cnt = 1;
       let len = currentData.history.length;
+      
+      // We render boundary above index `origin_idx`
+      // So if origin_idx == 0, boundary is at the very top
+      let d_cnt = 1;
+
+      if(len === 0 && currentData.current_game === 0) {
+         html += "<div class='history-container'><div class='empty-msg'>履歴がありません。<br>上のテンキーで入力・追加してください。</div></div>";
+         document.getElementById("root").innerHTML = html;
+         Streamlit.setFrameHeight();
+         return;
+      }
+
+      html += "<div class='history-container'>";
 
       for(let i=0; i < len; i++) {
         if(i === currentData.origin_idx) html += renderBoundary();
@@ -60,21 +240,24 @@
         let rowClass = "history-row" + (is_cut ? " cut-row" : "");
 
         html += `<div class='${rowClass}'>
-          <div class='col-num'>${is_cut ? '--' : d_cnt}回目</div>
-          <div class='col-game'>${row.g}G</div>
+          <div class='col-num'>${d_cnt}回目</div>
+          <div class='col-game'>${row["ゲーム数"]}G</div>
           <div class='badge ${bClass}' onclick='toggleBR(${i})'>${bLbl}</div>`;
           
         if(is_cut) {
           html += `<div class='col-cum-gray'>除外</div>`;
         } else {
-          let stG = total_games + row.g;
+          let stG = total_games + row["ゲーム数"];
+          // Note user's image: 88G(REG) -> 88G to 117G (which is 88+29)
+          // 256G(BIG) 373G to 442G (373+69)
           let enG = stG + (isBig ? 69 : 29);
           total_games = enG;
           html += `<div class='col-cum'>${stG}G &rarr; ${enG}G</div>`;
-          d_cnt++;
         }
+        d_cnt++;
         html += `</div>`;
       }
+      
       if(currentData.origin_idx === len) html += renderBoundary();
 
       // Current row
@@ -84,7 +267,7 @@
         html += `<div class='history-row current-row'>
           <div class='col-num'>現在</div>
           <div class='col-game'>${fg}G</div>
-          <div class='badge bg-now'>現在累計G</div>
+          <div class='badge bg-now'>現在G</div>
           <div class='final-total'>${ft}G</div>
         </div>`;
       }
@@ -107,7 +290,7 @@
         <div class='boundary-line'></div>
         <div class='boundary-label'>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7M19 5l-7-7-7 7"/></svg>
-          スワイプで上下移動
+          区切り線
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7M5 19l7 7 7-7"/></svg>
         </div>
       </div>`;
@@ -129,7 +312,6 @@
       document.getElementById('dragOverlay').style.display = 'block';
     }
 
-    // Bind document level move/end for mouse
     document.addEventListener('mousemove', onDragMove, {passive: false});
     document.addEventListener('mouseup', onDragEnd);
 
@@ -138,13 +320,11 @@
       if(e.cancelable) e.preventDefault();
       let cy = e.touches ? e.touches[0].clientY : e.clientY;
       let diffY = cy - startY;
-      
       let steps = Math.round(diffY / rowHeight);
       let newOrigin = Math.max(0, Math.min(currentData.history.length, startOrigin + steps));
-      
       if(newOrigin !== currentData.origin_idx) {
         currentData.origin_idx = newOrigin;
-        render(); // Visually update instantly
+        render(); 
       }
     }
 
@@ -152,21 +332,21 @@
       if(!isDragging) return;
       isDragging = false;
       document.getElementById('dragOverlay').style.display = 'none';
-      sendUpdate(); // Send the finalized index back to python
+      sendUpdate();
     }
 
     function sendUpdate() {
-      let outList = currentData.history.map(r => ({ BR: r.BR, "ゲーム数": r.g }));
+      let outList = currentData.history.map(r => ({ BR: r.BR, "ゲーム数": r["ゲーム数"] }));
       Streamlit.setComponentValue({
         history_updated: outList,
-        origin_idx: currentData.origin_idx
+        origin_idx: currentData.origin_idx,
+        current_game: currentData.current_game
       });
     }
 
     function onRender(event) {
       if(!isDragging && event.data.args) {
           let pyData = event.data.args.data;
-          // Prevent unnecessary re-renders if data matches identical JSON state
           currentData = {
               history: pyData.history,
               current_game: pyData.current_game,

@@ -254,26 +254,9 @@ if uploaded_file is not None:
 st.divider()
 
 # ==========================================
-# 手動入力・修正エリア
+# 自動計算ロジック
 # ==========================================
-with st.expander("✏️ 履歴データを手動で修正・追加する", expanded=False):
-    st.caption("※ 一番上が「最新の履歴」になるように入力してください。")
-
-    edited_df = st.data_editor(
-        st.session_state.history_data,
-        num_rows="dynamic",
-        use_container_width=True,
-        column_config={
-            "BR": st.column_config.SelectboxColumn("BR", options=["🟡 現在G", "🔴 BIG", "🔵 REG"], required=True),
-            "ゲーム数": st.column_config.NumberColumn("ゲーム数", min_value=0, step=1)
-        },
-        column_order=["BR", "ゲーム数"]
-    )
-
-# ==========================================
-# 自動計算ロジック & 美しいリストUI描画
-# ==========================================
-history = edited_df.to_dict("records")
+history = st.session_state.history_data.to_dict("records")
 
 current_game = 0
 history_bonuses = []
@@ -353,21 +336,29 @@ else:
     if result is not None:
         new_origin = result.get("origin_idx", origin_idx)
         updated_history = result.get("history_updated", [])
+        updated_current = result.get("current_game", current_game)
         
         changed = False
         if new_origin != origin_idx:
-            st.session_state.force_origin_idx = new_origin
             changed = True
             
-        if len(updated_history) == len(history_reversed):
+        if updated_current != current_game:
+            changed = True
+            
+        if len(updated_history) != len(history_reversed):
+            changed = True
+        else:
             for i, row in enumerate(history_reversed):
-                if row.get("BR") != updated_history[i].get("BR"):
+                row_g = int(row.get("ゲーム数", 0))
+                upd_g = int(updated_history[i].get("ゲーム数", 0))
+                if row.get("BR") != updated_history[i].get("BR") or row_g != upd_g:
                     changed = True
                     break
                     
         if changed:
+            st.session_state.force_origin_idx = new_origin
             # 最新を上に再構築
-            rebuilt = [{"BR": "🟡 現在G", "ゲーム数": current_game}]
+            rebuilt = [{"BR": "🟡 現在G", "ゲーム数": updated_current}]
             rebuilt.extend(reversed(updated_history))
             st.session_state.history_data = pd.DataFrame(rebuilt)
             st.rerun()
