@@ -52,6 +52,10 @@ st.markdown("""
     [data-testid="stFileUploaderDropzone"] small {
         font-size: 0.6rem !important;
     }
+    /* アップローダーのラベル（「履歴画像をアップロード」）も小さく */
+    [data-testid="stFileUploader"] label p {
+        font-size: 0.8rem !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -238,7 +242,7 @@ if "history_data" not in st.session_state:
 if "force_origin_idx" not in st.session_state:
     st.session_state.force_origin_idx = None
 
-st.markdown("#### 画像アップロード")
+st.markdown("<div style='font-size:1.0rem; font-weight:bold; margin-bottom:-10px; margin-top: 10px;'>画像アップロード</div>", unsafe_allow_html=True)
 uploaded_file = st.file_uploader("履歴画像をアップロード", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
