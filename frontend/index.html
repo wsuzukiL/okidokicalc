@@ -373,7 +373,7 @@
     // Let Streamlit know we are ready
     window.parent.postMessage({
       isStreamlitMessage: true,
-      type: "streamlit:setComponentReady",
+      type: "streamlit:componentReady",
       apiVersion: 1
     }, "*");
     
