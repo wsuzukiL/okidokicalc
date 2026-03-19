@@ -89,7 +89,6 @@
     .dragging-overlay { position: fixed; top:0; left:0; width:100%; height:100%; z-index: 9999; display: none; }
     .empty-msg {text-align:center; padding: 20px; color: #888;}
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/streamlit-component-lib@1.3.0/dist/streamlit.js"></script>
 </head>
 <body>
   <div class="dragging-overlay" id="dragOverlay"></div>
@@ -223,7 +222,7 @@
       if(len === 0 && currentData.current_game === 0) {
          html += "<div class='history-container'><div class='empty-msg'>履歴がありません。<br>上のテンキーで入力・追加してください。</div></div>";
          document.getElementById("root").innerHTML = html;
-         Streamlit.setFrameHeight();
+         setFrameHeight();
          return;
       }
 
@@ -282,7 +281,7 @@
         bWrap.addEventListener('touchend', onDragEnd);
         bWrap.addEventListener('mousedown', onDragStart);
       }
-      Streamlit.setFrameHeight();
+      setFrameHeight();
     }
 
     function renderBoundary() {
@@ -335,40 +334,52 @@
       sendUpdate();
     }
 
+    function setFrameHeight() {
+      let height = document.documentElement.scrollHeight || document.body.scrollHeight;
+      window.parent.postMessage({
+        isStreamlitMessage: true,
+        type: "streamlit:setFrameHeight",
+        height: height
+      }, "*");
+    }
+
     function sendUpdate() {
       let outList = currentData.history.map(r => ({ BR: r.BR, "ゲーム数": r["ゲーム数"] }));
-      Streamlit.setComponentValue({
+      let val = {
         history_updated: outList,
         origin_idx: currentData.origin_idx,
         current_game: currentData.current_game
-      });
+      };
+      
+      window.parent.postMessage({
+        isStreamlitMessage: true,
+        type: "streamlit:setComponentValue",
+        value: val
+      }, "*");
     }
 
-    function onRender(event) {
-      try {
-        let args = event.detail ? event.detail.args : (event.data ? event.data.args : null);
-        if(!isDragging && args) {
-            let pyData = args.data;
-            currentData = {
-                history: pyData.history,
-                current_game: pyData.current_game,
-                origin_idx: pyData.origin_idx
-            };
-            render();
-        }
-      } catch(e) {
-        console.error("Streamlit rendering error:", e);
-      } finally {
-        Streamlit.setFrameHeight();
+    window.addEventListener("message", function(event) {
+      if (event.data && event.data.type === "streamlit:render") {
+          let pyData = event.data.args.data;
+          currentData = {
+              history: pyData.history,
+              current_game: pyData.current_game,
+              origin_idx: pyData.origin_idx
+          };
+          render();
       }
-    }
+    });
 
-    Streamlit.events.addEventListener(Streamlit.RENDER_EVENT, onRender);
-    Streamlit.setComponentReady();
+    // Let Streamlit know we are ready
+    window.parent.postMessage({
+      isStreamlitMessage: true,
+      type: "streamlit:setComponentReady",
+      apiVersion: 1
+    }, "*");
     
-    // Initial height calculation is REQUIRED for Streamlit not to timeout reading the component.
+    // Initial height calculation
     window.setTimeout(() => {
-        Streamlit.setFrameHeight();
+        setFrameHeight();
     }, 100);
   </script>
 </body>
