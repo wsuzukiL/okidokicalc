@@ -41,7 +41,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("沖ドキ！GOLD 計算機")
+st.title("沖ドキGOLDチェッカー")
 
 # ==========================================
 # OCR 処理関数
