@@ -323,7 +323,7 @@ _frontend_dir = os.path.join(os.path.dirname(__file__), "frontend")
 history_ui = components.declare_component("history_ui", path=_frontend_dir)
 
 py_data = {
-    "history": [{"BR": r.get("BR", "🔴 BIG"), "g": int(r.get("ゲーム数", 0))} for r in history_reversed],
+    "history": [{"BR": r.get("BR", "🔴 BIG"), "ゲーム数": int(r.get("ゲーム数", 0))} for r in history_reversed],
     "current_game": current_game,
     "origin_idx": origin_idx
 }

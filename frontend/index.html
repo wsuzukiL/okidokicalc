@@ -345,14 +345,21 @@
     }
 
     function onRender(event) {
-      if(!isDragging && event.data.args) {
-          let pyData = event.data.args.data;
-          currentData = {
-              history: pyData.history,
-              current_game: pyData.current_game,
-              origin_idx: pyData.origin_idx
-          };
-          render();
+      try {
+        let args = event.detail ? event.detail.args : (event.data ? event.data.args : null);
+        if(!isDragging && args) {
+            let pyData = args.data;
+            currentData = {
+                history: pyData.history,
+                current_game: pyData.current_game,
+                origin_idx: pyData.origin_idx
+            };
+            render();
+        }
+      } catch(e) {
+        console.error("Streamlit rendering error:", e);
+      } finally {
+        Streamlit.setFrameHeight();
       }
     }
 
