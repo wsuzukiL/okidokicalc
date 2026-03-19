@@ -6,16 +6,11 @@ import json
 import re
 import os
 import datetime
-import extra_streamlit_components as stx
 from statistics import pstdev
 
 # ==========================================
-# Cookie Manager: スマホ用ブラウザ保存設定
+# APIキー取得 (Secrets / Enum 専用)
 # ==========================================
-cookie_manager = stx.CookieManager()
-cookie_val = cookie_manager.get(cookie="google_api_key")
-
-# 環境変数やSecrets、Cookieからの取得を優先
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
 if not GOOGLE_API_KEY:
     try:
@@ -23,51 +18,30 @@ if not GOOGLE_API_KEY:
     except (FileNotFoundError, KeyError):
         pass
 
-if not GOOGLE_API_KEY and cookie_val:
-    GOOGLE_API_KEY = cookie_val
+if not GOOGLE_API_KEY:
+    st.error("【要設定】Google Cloud Vision APIキーが設定されていません。Streamlit Cloudの Secrets に `GOOGLE_API_KEY` を設定してください。")
+    st.stop()
 
-# セッションステートにAPIキーを保持する（再描画時の安定化のため）
-if "api_key_state" not in st.session_state:
-    st.session_state.api_key_state = GOOGLE_API_KEY
+# ==========================================
+# スマホ特化レイアウト調整
+# ==========================================
+st.markdown("""
+<style>
+    /* スマホ画面向けの極小パディング */
+    .block-container {
+        padding-top: 1rem;
+        padding-bottom: 2rem;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+        max-width: 100%;
+    }
+    /* ヘッダー・フッター非表示 */
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+</style>
+""", unsafe_allow_html=True)
 
-# 画面構成: タイトル
-st.title("沖ドキ！GOLD 有利区間計算ツール")
-
-# 初回APIキー入力UI
-if not GOOGLE_API_KEY and not cookie_val and not st.session_state.api_key_state:
-    st.warning("⚠️ Google Cloud Vision APIキーが設定されていません。")
-    st.info("初回のみ、以下の枠にAPIキーを入力してください。お使いのスマホ(ブラウザ)に安全に保存され、次回からは入力を省略できます。")
-    
-    with st.form(key="api_form"):
-        api_key_input = st.text_input("🔑 APIキー", type="password")
-        submit_button = st.form_submit_button(label="キーを保存して開始する")
-        
-        if submit_button:
-            if api_key_input:
-                st.session_state.api_key_state = api_key_input
-                cookie_manager.set("google_api_key", api_key_input, expires_at=datetime.datetime(2030, 1, 1))
-                st.success("APIキーを保存しました！画面をリロードしています...")
-                # Streamlitのライフサイクル都合上、少し間を置いてリランするような挙動にする
-                import time
-                time.sleep(1)
-                st.rerun()
-            else:
-                st.error("APIキーを入力してください。")
-    st.stop()  # キーがない場合はここで画面描画を停止
-
-# キーが確定した場合、状態に同期
-if GOOGLE_API_KEY:
-    st.session_state.api_key_state = GOOGLE_API_KEY
-
-# サイドバーにリセットボタン配置
-with st.sidebar:
-    st.header("⚙️ 設定")
-    if st.button("🔄 APIキーの保存をリセット"):
-        cookie_manager.delete("google_api_key")
-        st.session_state.api_key_state = ""
-        import time
-        time.sleep(0.5)
-        st.rerun()
+st.title("沖ドキ！GOLD 計算機")
 
 # ==========================================
 # OCR 処理関数
@@ -280,86 +254,6 @@ if uploaded_file is not None:
 st.divider()
 
 # ==========================================
-# カスタムCSSの注入
-# ==========================================
-st.markdown("""
-<style>
-.badge-big {
-    background-color: #dc3545;
-    color: white;
-    padding: 5px 12px;
-    border-radius: 6px;
-    font-weight: bold;
-    font-size: 1.1em;
-    display: inline-block;
-    width: 60px;
-    text-align: center;
-}
-.badge-reg {
-    background-color: #007bff;
-    color: white;
-    padding: 5px 12px;
-    border-radius: 6px;
-    font-weight: bold;
-    font-size: 1.1em;
-    display: inline-block;
-    width: 60px;
-    text-align: center;
-}
-.badge-now {
-    background-color: #ffc107;
-    color: black;
-    padding: 5px 12px;
-    border-radius: 6px;
-    font-weight: 900;
-    font-size: 1.25em;
-    display: inline-block;
-    width: 120px;
-    text-align: center;
-}
-.history-row {
-    font-size: 1.25em;
-    padding: 12px 5px;
-    border-bottom: 1px solid #f0f0f0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-.history-col-num {
-    width: 65px;
-    color: #555;
-    font-size: 1.0em;
-}
-.history-col-game {
-    width: 60px;
-    text-align: right;
-    font-weight: bold;
-}
-.history-col-cum {
-    color: #b30000;
-    font-size: 1.25em;
-    font-weight: 800;
-    text-align: right;
-    flex-grow: 1;
-    text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff;
-    letter-spacing: 0.5px;
-}
-.history-container {
-    background-color: #ffffff;
-    padding: 15px;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    margin-bottom: 20px;
-    border: 1px solid #e6e6e6;
-}
-.cut-row {
-    background-color: #f8f9fa;
-    opacity: 0.6;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# ==========================================
 # 手動入力・修正エリア
 # ==========================================
 with st.expander("✏️ 履歴データを手動で修正・追加する", expanded=False):
@@ -435,93 +329,45 @@ else:
     total_games += current_game
     remaining_games = max(0, 2000 - total_games)
     
-    # ネイティブStreamlitコンポーネントによるリストレイアウト
-    st.markdown("<div class='history-container'>", unsafe_allow_html=True)
+    # サマリーダッシュボード
+    st.markdown(f"""
+    <div style="display:flex; justify-content:space-between; background:#333; color:#fff; padding:10px 15px; border-radius:12px; margin-bottom:15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <div style="font-size:0.95em;">残り有利(2000G)<br><span style="font-size:1.6em;color:#ffc107;font-weight:900;">{remaining_games}G</span></div>
+        <div style="font-size:0.95em; text-align:right;">計算対象 累計<br><span style="font-size:1.6em;color:#4facfe;font-weight:900;">{total_games}G</span></div>
+    </div>
+    """, unsafe_allow_html=True)
     
-    total_games = 0
-    display_count = 1
+    # カスタムコンポーネントの呼び出し
+    import streamlit.components.v1 as components
+    _frontend_dir = os.path.join(os.path.dirname(__file__), "frontend")
+    history_ui = components.declare_component("history_ui", path=_frontend_dir)
     
-    def draw_boundary_line(idx, total_len):
-        col1, col2, col3 = st.columns([1, 6, 1], vertical_alignment="center")
-        with col1:
-            if st.button("⬆️", key=f"up_{idx}", use_container_width=True, disabled=(idx == 0)):
-                st.session_state.force_origin_idx = max(0, idx - 1)
-                st.rerun()
-        with col2:
-            st.markdown("""
-            <div style='text-align: center; color: #dc3545; font-size: 0.95em; font-weight: bold; margin-bottom: -15px;'>
-                ⬆️ 上は除外 / ここから下を計算 ⬇️
-            </div>
-            <hr style='border: 2px dashed #dc3545; margin: 15px 0;'>
-            """, unsafe_allow_html=True)
-        with col3:
-            if st.button("⬇️", key=f"down_{idx}", use_container_width=True, disabled=(idx >= total_len)):
-                st.session_state.force_origin_idx = min(total_len, idx + 1)
-                st.rerun()
-
-    for i, row in enumerate(history_reversed):
-        if i == origin_idx:
-            draw_boundary_line(origin_idx, len(history_reversed))
+    py_data = {
+        "history": [{"BR": r.get("BR", "🔴 BIG"), "g": int(r.get("ゲーム数", 0))} for r in history_reversed],
+        "current_game": current_game,
+        "origin_idx": origin_idx
+    }
+    
+    result = history_ui(data=py_data, key="history_ui_instance")
+    
+    if result is not None:
+        new_origin = result.get("origin_idx", origin_idx)
+        updated_history = result.get("history_updated", [])
+        
+        changed = False
+        if new_origin != origin_idx:
+            st.session_state.force_origin_idx = new_origin
+            changed = True
             
-        try:
-            g = int(row.get("ゲーム数", 0))
-        except (ValueError, TypeError):
-            g = 0
-        b_type = row.get("BR", "🔴 BIG")
-        
-        is_cut = i < origin_idx
-        row_class = "history-row cut-row" if is_cut else "history-row"
-        
-        if is_cut:
-            col1, col2, col3, col4 = st.columns([1, 1, 1, 2], vertical_alignment="center")
-            with col1:
-                st.markdown(f"<span class='history-col-num'>--回目</span>", unsafe_allow_html=True)
-            with col2:
-                st.markdown(f"<span class='history-col-game'>{g}G</span>", unsafe_allow_html=True)
-            with col3:
-                badge_type = 'big' if 'BIG' in b_type else 'reg'
-                badge_label = 'BIG' if 'BIG' in b_type else 'REG'
-                st.markdown(f"<span class='badge-{badge_type}'>{badge_label}</span>", unsafe_allow_html=True)
-            with col4:
-                st.markdown("<span class='history-col-cum'>連チャン中 (除外)</span>", unsafe_allow_html=True)
-        else:
-            start_g = total_games + g
-            if "BIG" in b_type:
-                end_g = start_g + 69
-                badge = "<span class='badge-big'>BIG</span>"
-            else:
-                end_g = start_g + 29
-                badge = "<span class='badge-reg'>REG</span>"
-                
-            cols = st.columns([1, 1, 1, 2], vertical_alignment="center")
-            with cols[0]:
-                st.markdown(f"<span class='history-col-num'>{display_count}回目</span>", unsafe_allow_html=True)
-            with cols[1]:
-                st.markdown(f"<span class='history-col-game'>{g}G</span>", unsafe_allow_html=True)
-            with cols[2]:
-                st.markdown(badge, unsafe_allow_html=True)
-            with cols[3]:
-                st.markdown(f"<span class='history-col-cum' style='font-size: 1.25em;'>{start_g}G &rarr; {end_g}G</span>", unsafe_allow_html=True)
-
-            total_games = end_g
-            display_count += 1
-            
-        st.markdown("<hr style='margin: 0.5em 0; border-top: 1px solid #f0f0f0;'/>", unsafe_allow_html=True)
-        
-    if origin_idx == len(history_reversed):
-        draw_boundary_line(origin_idx, len(history_reversed))
-            
-    # 現在のゲーム数行
-    if current_game > 0 or total_games > 0:
-        final_total = total_games + current_game
-        cols = st.columns([1, 1, 1.5, 1.5], vertical_alignment="center")
-        with cols[0]:
-            st.markdown(f"<span class='history-col-num'>現在</span>", unsafe_allow_html=True)
-        with cols[1]:
-            st.markdown(f"<span class='history-col-game'>{current_game}G</span>", unsafe_allow_html=True)
-        with cols[2]:
-            st.markdown(f"<span class='badge-now'>現在累計G</span>", unsafe_allow_html=True)
-        with cols[3]:
-            st.markdown(f"<span class='history-col-cum' style='color: #d11a2a; font-size: 1.6em; font-weight: 900;'>{final_total}G</span>", unsafe_allow_html=True)
-        
-    st.markdown("</div>", unsafe_allow_html=True)
+        if len(updated_history) == len(history_reversed):
+            for i, row in enumerate(history_reversed):
+                if row.get("BR") != updated_history[i].get("BR"):
+                    changed = True
+                    break
+                    
+        if changed:
+            # 最新を上に再構築
+            rebuilt = [{"BR": "🟡 現在G", "ゲーム数": current_game}]
+            rebuilt.extend(reversed(updated_history))
+            st.session_state.history_data = pd.DataFrame(rebuilt)
+            st.rerun()
