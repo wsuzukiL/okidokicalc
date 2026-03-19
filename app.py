@@ -246,8 +246,8 @@ st.markdown("<div style='font-size:1.0rem; font-weight:bold; margin-bottom:-10px
 uploaded_file = st.file_uploader("履歴画像をアップロード", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
-    # プレビュー画像を小さくサムネイル表示
-    st.image(uploaded_file, width=250)
+    # プレビュー画像を極力小さくサムネイル表示 (1/3サイズ)
+    st.image(uploaded_file, width=80)
         
     if st.button("🔍 画像から履歴を読み取る"):
         with st.spinner("画像を解析中..."):
