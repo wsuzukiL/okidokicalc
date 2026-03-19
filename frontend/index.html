@@ -365,6 +365,11 @@
 
     Streamlit.events.addEventListener(Streamlit.RENDER_EVENT, onRender);
     Streamlit.setComponentReady();
+    
+    // Initial height calculation is REQUIRED for Streamlit not to timeout reading the component.
+    window.setTimeout(() => {
+        Streamlit.setFrameHeight();
+    }, 100);
   </script>
 </body>
 </html>
