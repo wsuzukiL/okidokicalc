@@ -37,11 +37,25 @@ st.markdown("""
     }
     /* ヘッダー・フッター非表示 */
     header {visibility: hidden;}
-    footer {visibility: hidden;}
+    /* ファイルアップローダーの小型化 */
+    [data-testid="stFileUploaderDropzone"] {
+        padding: 10px !important;
+    }
+    [data-testid="stFileUploaderDropzone"] svg {
+        width: 30px !important;
+        height: 30px !important;
+        margin-bottom: 5px !important;
+    }
+    [data-testid="stFileUploaderDropzone"] div {
+        font-size: 0.8rem !important;
+    }
+    [data-testid="stFileUploaderDropzone"] small {
+        font-size: 0.6rem !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("沖ドキGOLDチェッカー")
+st.markdown("<h3 style='text-align:center; font-size:1.4rem; margin-top:-10px; margin-bottom:-10px;'>沖ドキGOLDチェッカー</h3>", unsafe_allow_html=True)
 
 # ==========================================
 # OCR 処理関数
@@ -224,8 +238,8 @@ if "history_data" not in st.session_state:
 if "force_origin_idx" not in st.session_state:
     st.session_state.force_origin_idx = None
 
-st.markdown("### 画像アップロード")
-uploaded_file = st.file_uploader("データカウンタの履歴画像をアップロードしてください", type=["jpg", "jpeg", "png"])
+st.markdown("#### 画像アップロード")
+uploaded_file = st.file_uploader("履歴画像をアップロード", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
     # プレビュー画像を小さくサムネイル表示
