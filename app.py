@@ -28,15 +28,18 @@ if not GOOGLE_API_KEY:
 st.markdown("""
 <style>
     /* スマホ画面向けの極小パディング */
-    .block-container {
-        padding-top: 1rem;
-        padding-bottom: 2rem;
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
-        max-width: 100%;
+    /* 全体とメインコンテナを真っ黒にする */
+    .stApp, .main, .block-container {
+        background-color: #000000 !important;
     }
     /* ヘッダー・フッター非表示 */
     header {visibility: hidden;}
+    [data-testid="stHeader"] { background-color: rgba(0,0,0,0) !important; }
+    
+    /* テキストやタイトルのデフォルト色を暗めに設定（覗き見防止） */
+    h1, h2, h3, p, span, div, label {
+        color: #888 !important;
+    }
     /* --- ファイルアップローダーを完全なシンプルボタン化 --- */
     /* ドロップゾーンの枠線や背景を消す */
     [data-testid="stFileUploaderDropzone"] {
