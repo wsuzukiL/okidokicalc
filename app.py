@@ -179,19 +179,19 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-title_ph = st.empty()
-title_ph.markdown("""
-<div style='text-align:center !important; margin-top:-10px !important; margin-bottom:-5px !important;'>
-    <span style='
-        font-size: 2.5rem !important; 
+st.markdown("""
+<div style='text-align:center; margin-bottom: -20px;'>
+    <h1 style='
+        font-size: 2.8rem !important; 
         font-weight: 900 !important; 
         color: #FF9800 !important;
-        text-shadow: 0 0 15px rgba(255, 152, 0, 0.9), 2px 2px 5px rgba(0,0,0,1) !important; 
-        letter-spacing: 3px !important;
-        display: inline-block !important;
+        text-shadow: 0 0 20px rgba(255, 152, 0, 0.9), 2px 2px 5px rgba(0,0,0,1) !important; 
+        letter-spacing: 2px !important;
+        margin: 0 !important;
+        padding: 10px 0 !important;
     '>
-        沖ドキGOLDチェッカー
-    </span>
+        🌺 沖ドキGOLD 🌺<br><span style='font-size: 1.5rem !important;'>チェッカー ver 2.1</span>
+    </h1>
 </div>
 """, unsafe_allow_html=True)
 st.divider()
