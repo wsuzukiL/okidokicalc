@@ -11,6 +11,16 @@ from statistics import pstdev
 # ページ基本設定（Wideレイアウト＋手動センターで影を回避）
 st.set_page_config(page_title="沖ドキGOLDチェッカー", layout="wide", initial_sidebar_state="collapsed")
 
+# ==========================================
+# APIキー取得 (Secrets / Enum 専用)
+# ==========================================
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
+if not GOOGLE_API_KEY:
+    try:
+        GOOGLE_API_KEY = st.secrets.get("GOOGLE_API_KEY", "")
+    except (FileNotFoundError, KeyError):
+        pass
+
 if not GOOGLE_API_KEY:
     st.error("【要設定】Google Cloud Vision APIキーが設定されていません。Streamlit Cloudの Secrets に `GOOGLE_API_KEY` を設定してください。")
     st.stop()
