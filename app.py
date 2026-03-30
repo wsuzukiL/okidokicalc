@@ -8,38 +8,113 @@ import os
 import datetime
 from statistics import pstdev
 
-# ==========================================
-# APIキー取得 (Secrets / Enum 専用)
-# ==========================================
-GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
-if not GOOGLE_API_KEY:
-    try:
-        GOOGLE_API_KEY = st.secrets.get("GOOGLE_API_KEY", "")
-    except (FileNotFoundError, KeyError):
-        pass
+# ページ基本設定（Wideレイアウト＋手動センターで影を回避）
+st.set_page_config(page_title="沖ドキGOLDチェッカー", layout="wide", initial_sidebar_state="collapsed")
 
 if not GOOGLE_API_KEY:
     st.error("【要設定】Google Cloud Vision APIキーが設定されていません。Streamlit Cloudの Secrets に `GOOGLE_API_KEY` を設定してください。")
     st.stop()
+
 
 # ==========================================
 # スマホ特化レイアウト調整
 # ==========================================
 st.markdown("""
 <style>
-    /* スマホ画面向けの極小パディング */
-    /* 全体とメインコンテナを真っ黒にする */
-    .stApp, .main, .block-container {
-        background-color: #000000 !important;
+    /* --- 漆黒の特異点 (Singularity Blackout) --- */
+    :root {
+        --primary-color: #3b82f6 !important;
+        --background-color: #000000 !important;
+        --secondary-background-color: #000000 !important;
+        --text-color: #777777 !important;
     }
-    /* ヘッダー・フッター非表示 */
-    header {visibility: hidden;}
-    [data-testid="stHeader"] { background-color: rgba(0,0,0,0) !important; }
     
-    /* テキストやタイトルのデフォルト色を暗めに設定（覗き見防止） */
-    h1, h2, h3, p, span, div, label {
-        color: #888 !important;
+    /* ユニバーサル・リセット：影、背景、境界を全て消し去る */
+    *, *::before, *::after {
+        box-shadow: none !important;
+        background-image: none !important;
+        outline: none !important;
+        border: none !important;
     }
+
+    /* 最上位レイヤーを真っ黒に固定 */
+    html, body, .stApp, 
+    [data-testid="stAppViewContainer"], 
+    [data-testid="stHeader"], 
+    .main, .block-container, section.stMain {
+        background-color: #000000 !important;
+        background: #000000 !important;
+    }
+    
+    /* 特定ハッシュを含む全コンテナの装飾を抹消 */
+    div[class*="st-"], section[class*="st-"], [class*="e1td4qo"] {
+        box-shadow: none !important;
+        background-image: none !important;
+        background: transparent !important;
+    }
+    
+    /* 画面上部の青い線を物理的に消す */
+    [data-testid="stDecoration"] {
+        display: none !important;
+        height: 0 !important;
+    }
+    
+    /* ヘッダー・フッター・ツールバーを完全に消去 */
+    header, footer, [data-testid="stToolbar"] {
+        display: none !important;
+        visibility: hidden !important;
+    }
+    
+    /* スマホ画面向けの幅制限と中央寄せ（Wideレイアウト用） */
+    .block-container {
+        max-width: 500px !important;
+        margin: auto !important;
+        padding-top: 0.5rem !important;
+    }
+    
+    /* テキスト色を暗めにして覗き見防止 */
+    h1, h2, h3, p, span, div, label, .stMarkdown, [data-testid="stText"], .stMetric {
+        color: #777 !important;
+    }
+    
+    /* 分切り線も完全に闇に紛れさせる */
+    hr { border-color: #111 !important; }
+    
+    /* 全ての st-emotion-cache クラスの背景と影を強制的に黒にする */
+    [class*="st-emotion-cache"] {
+        background-color: #000000 !important;
+        background: #000000 !important;
+        box-shadow: none !important;
+    }
+</style>
+
+<script>
+    // 親ドキュメント（メインブラウザ画面）に対して直接黒くするスタイルの上書きを試みる
+    const style = window.parent.document.createElement('style');
+    style.innerHTML = `
+        /* 全てのコンテナの背景と影を殺す */
+        *, *::before, *::after {
+            box-shadow: none !important;
+            background-image: none !important;
+            background-color: transparent !important;
+        }
+        html, body, .stApp, 
+        [data-testid="stAppViewContainer"], 
+        [data-testid="stHeader"], 
+        .main, .block-container, section.stMain {
+            background-color: #000000 !important;
+            background: #000000 !important;
+        }
+        /* 画面上部の青い線 (stDecoration) を物理的に消す */
+        [data-testid="stDecoration"] {
+            display: none !important;
+            height: 0 !important;
+        }
+    `;
+    window.parent.document.head.appendChild(style);
+</script>
+
+<style>
     /* --- ファイルアップローダーを完全なシンプルボタン化 --- */
     /* ドロップゾーンの枠線や背景を消す */
     [data-testid="stFileUploaderDropzone"] {
@@ -94,8 +169,24 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("<h3 style='text-align:center; font-size:1.4rem; margin-top:-10px; margin-bottom:-10px; color:#aaa;'>沖ドキGOLDチェッカー</h3>", unsafe_allow_html=True)
+title_ph = st.empty()
+title_ph.markdown("""
+<div style='text-align:center !important; margin-top:-10px !important; margin-bottom:-5px !important;'>
+    <span style='
+        font-size: 2.5rem !important; 
+        font-weight: 900 !important; 
+        color: #FF9800 !important;
+        text-shadow: 0 0 15px rgba(255, 152, 0, 0.9), 2px 2px 5px rgba(0,0,0,1) !important; 
+        letter-spacing: 3px !important;
+        display: inline-block !important;
+    '>
+        沖ドキGOLDチェッカー
+    </span>
+</div>
+""", unsafe_allow_html=True)
 st.divider()
+
+# force_update_signal: 1
 
 # ==========================================
 # OCR 処理関数
