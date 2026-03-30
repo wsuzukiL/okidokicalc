@@ -46,28 +46,35 @@ st.markdown("""
         min-height: 0 !important;
     }
     /* ドラッグアンドドロップ案内や雲アイコンを完全に隠す */
-    [data-testid="stFileUploaderDropzone"] > div:first-child {
+    [data-testid="stFileUploaderDropzone"] > div:not(:last-child) {
         display: none !important; 
+    }
+    [data-testid="stFileUploaderDropzone"] svg, 
+    [data-testid="stFileUploaderDropzone"] small {
+        display: none !important;
     }
     /* "Browse files" ボタンの見た目をカスタマイズ */
     [data-testid="stFileUploaderDropzone"] button {
         width: 100% !important;
         padding: 12px !important;
         background-color: #3b82f6 !important; /* スタイリッシュな青 */
-        color: white !important;
+        color: transparent !important; /* 元の文字色を完全透明化 */
         font-weight: 700 !important;
         border-radius: 8px !important;
         border: none !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2) !important;
         position: relative !important;
+        overflow: hidden !important;
     }
-    /* "Browse files"という元の英語テキストを透明にして隠す */
-    [data-testid="stFileUploaderDropzone"] button span {
+    /* "Browse files"や内包される可能性のあるSVGアイコンなどを徹底的に消す */
+    [data-testid="stFileUploaderDropzone"] button * {
+        display: none !important;
         opacity: 0 !important;
+        visibility: hidden !important;
     }
-    /* その上から「画像アップロード」という日本語文字を被せる */
+    /* その上から「画像アップロード」アイコンを被せる */
     [data-testid="stFileUploaderDropzone"] button::after {
-        content: "📸 画像アップロード" !important;
+        content: "📁" !important;
         position: absolute !important;
         left: 0 !important;
         top: 0 !important;
@@ -77,14 +84,15 @@ st.markdown("""
         align-items: center !important;
         justify-content: center !important;
         opacity: 1 !important;
-        color: white !important;
-        font-size: 1rem !important;
+        color: #999 !important;
+        font-size: 1.5rem !important;
         pointer-events: none !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("<h3 style='text-align:center; font-size:1.4rem; margin-top:-10px; margin-bottom:-10px;'>沖ドキGOLDチェッカー</h3>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align:center; font-size:1.4rem; margin-top:-10px; margin-bottom:-10px; color:#aaa;'>沖ドキGOLDチェッカー</h3>", unsafe_allow_html=True)
+st.divider()
 
 # ==========================================
 # OCR 処理関数
@@ -270,8 +278,8 @@ if "force_origin_idx" not in st.session_state:
 uploaded_file = st.file_uploader("", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
 
 if uploaded_file is not None:
-    # プレビュー画像を極力小さくサムネイル表示 (1/3サイズ)
-    st.image(uploaded_file, width=80)
+    # プレビュー画像を元のサイズに戻す
+    st.image(uploaded_file, width=250)
         
     if st.button("🔍 画像から履歴を読み取る"):
         with st.spinner("画像を解析中..."):
@@ -349,13 +357,11 @@ for i, row in enumerate(history_reversed):
             total_games = start_g + 29
             
 total_games += current_game
-remaining_games = max(0, 2000 - total_games)
 
-# サマリーダッシュボード
+# サマリーダッシュボード (計算対象 累計のみ)
 st.markdown(f"""
-<div style="display:flex; justify-content:space-between; background:#333; color:#fff; padding:10px 15px; border-radius:12px; margin-bottom:15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-    <div style="font-size:0.95em;">残り有利(2000G)<br><span style="font-size:1.6em;color:#ffc107;font-weight:900;">{remaining_games}G</span></div>
-    <div style="font-size:0.95em; text-align:right;">計算対象 累計<br><span style="font-size:1.6em;color:#4facfe;font-weight:900;">{total_games}G</span></div>
+<div style="display:flex; justify-content:center; background:#1c1c1e; color:#777; padding:10px 15px; border-radius:12px; margin-bottom:15px; border: 1px solid #333;">
+    <div style="font-size:0.95em; text-align:center;">計算対象 累計<br><span style="font-size:1.6em;color:#3b82f6;font-weight:900;">{total_games}G</span></div>
 </div>
 """, unsafe_allow_html=True)
 
